@@ -24,21 +24,18 @@ public class EffectsFactory {
 
     public String pickSound() {
         File[] files = new File(toolBox.SOUNDS).listFiles();
-        Random rand = new Random();
-        File file = files[rand.nextInt(files.length)];
+        File file = files[toolBox.randomInt(0, files.length - 1)];
         return file.getPath();
     }
     public String pickSource() {
         File[] files = new File(toolBox.SOURCES).listFiles();
-        Random rand = new Random();
-        File file = files[rand.nextInt(files.length)];
+        File file = files[toolBox.randomInt(0, files.length - 1)];
         return file.getPath();
     }
 
     public String pickMusic() {
         File[] files = new File(toolBox.MUSIC).listFiles();
-        Random rand = new Random();
-        File file = files[rand.nextInt(files.length)];
+        File file = files[toolBox.randomInt(0, files.length - 1)];
         return file.getPath();
     }
 
