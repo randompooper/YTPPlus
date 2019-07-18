@@ -313,11 +313,11 @@ public class EffectsFactory {
                         break;
                     case 2:
                         cmdLine.add("-implode");
-                        cmdLine.add((toolBox.randomInt(0, 1) == 0 ? "-" : "") + toolBox.randomInt(1, 3));
+                        cmdLine.add((toolBox.randomBool() ? "-" : "") + toolBox.randomInt(1, 3));
                         break;
                     case 3:
                         cmdLine.add("-swirl");
-                        cmdLine.add((toolBox.randomInt(0, 1) == 0 ? "-" : "") + toolBox.randomInt(1, 180));
+                        cmdLine.add((toolBox.randomBool() ? "-" : "") + toolBox.randomInt(1, 180));
                         break;
                     case 4:
                         cmdLine.add("-channel");
@@ -380,7 +380,7 @@ public class EffectsFactory {
             if (in.exists())
                 in.renameTo(temp);
 
-            boolean flip = toolBox.randomInt(0, 1) == 0;
+            boolean flip = toolBox.randomBool();
             toolBox.execFFmpeg("-i", temp.getPath(),
                 "-vf", "crop=iw/2:ih:" + (flip ? "0:0" : "iw/2:ih") + ",split[part0][tmp];"
                 + "[tmp]hflip[part1];" + (flip ? "[part0][part1]" : "[part1][part0]") + "hstack",

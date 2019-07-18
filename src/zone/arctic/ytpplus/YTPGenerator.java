@@ -146,7 +146,7 @@ public class YTPGenerator {
                             toolBox.snipVideo(sourceToPick, startOfClip, endOfClip, clipToWorkWith);
                         }
                         //Add a random effect to the video
-                        int effect = toolBox.randomInt(0, 18);
+                        int effect = toolBox.randomBool() ? toolBox.randomInt(1, 12) : 0;
                         System.out.println("STARTING EFFECT ON CLIP " + i + " EFFECT" + effect);
                         switch (effect) {
                             case 1:

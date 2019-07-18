@@ -155,6 +155,10 @@ public class Utilities {
         return randomInt(0, (1 << 30) - 1);
     }
 
+    public boolean randomBool() {
+        return random.nextBoolean();
+    }
+
     public String getTempVideoName() {
         return TEMP + randomInt() + "-temp.mp4";
     }
