@@ -297,11 +297,14 @@ public class EffectsFactory {
                 "-vframes", "1",
                 "-y", picturePrefix + "squidward0.png");
 
+            int squidPrev = -1, squidSwitch;
             for (int i = 1; i < 6; i++) {
                 ArrayList<String> cmdLine = new ArrayList<String>();
                 cmdLine.add("convert");
                 cmdLine.add(picturePrefix + "squidward0.png");
-                switch (toolBox.randomInt(0, 4)) {
+
+                while ((squidSwitch = toolBox.randomInt(0, 4)) == squidPrev);
+                switch ((squidPrev = squidSwitch)) {
                     case 0:
                         cmdLine.add("-flop");
                         break;
