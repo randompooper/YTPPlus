@@ -125,7 +125,6 @@ public class YTPGenerator {
                 cleanUp();
 
                 try {
-                    PrintWriter writer = new PrintWriter(toolBox.TEMP+"concat.txt", "UTF-8");
                     IntStream.range(0, MAX_CLIPS).parallel().forEach(i -> {
                         String sourceToPick = sourceList.get(toolBox.randomInt(0, sourceList.size() - 1));
                         System.out.println(sourceToPick);
@@ -197,24 +196,12 @@ public class YTPGenerator {
                                 if (mirror)
                                     effectsFactory.effect_Mirror(clipToWorkWith);
                             default:
-                                //toolBox.convertVideo(clipToWorkWith);
                                 break;
                         }
                         doneCount += 1.0 / MAX_CLIPS;
                     });
-                    for (int i = 0; i < MAX_CLIPS; i++) {
-                        if (new File(toolBox.TEMP+"video" + i + ".mp4").exists()) {
-                            writer.write("file 'video" + i + ".mp4'\n"); //writing to same folder
-                        }
-                    }
-                    writer.close();
-                    //Thread.sleep(10000);
                     toolBox.concatenateVideo(MAX_CLIPS, OUTPUT_FILE);
-                    //Thread.sleep(4000);
-
-                } catch (Exception ex) { ex.printStackTrace();
-                }
-                cleanUp();
+                } catch (Exception ex) { ex.printStackTrace(); }
                 rmDir(new File(toolBox.TEMP));
                 done = true;
             }
@@ -238,10 +225,6 @@ public class YTPGenerator {
     }
 
     public void cleanUp() {
-        //Create concatenation text file
-        File text = new File(toolBox.TEMP+"concat.txt");
-        if (text.exists())
-            text.delete();
         File mp4 = new File(toolBox.TEMP + "temp.mp4");
         if (mp4.exists())
             mp4.delete();
