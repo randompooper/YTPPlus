@@ -30,6 +30,7 @@ public class YTPGenerator {
     public boolean effect9;
     public boolean effect10;
     public boolean effect11;
+    public boolean effect12;
     public boolean insertTransitionClips;
 
     public Utilities toolBox = new Utilities();
@@ -57,6 +58,7 @@ public class YTPGenerator {
         effect9=true;
         effect10=true;
         effect11=true;
+        effect12=true;
 
         insertTransitionClips=true;
     }
@@ -144,7 +146,7 @@ public class YTPGenerator {
                             toolBox.snipVideo(sourceToPick, startOfClip, endOfClip, clipToWorkWith);
                         }
                         //Add a random effect to the video
-                        int effect = toolBox.randomInt(0, 16);
+                        int effect = toolBox.randomInt(0, 18);
                         System.out.println("STARTING EFFECT ON CLIP " + i + " EFFECT" + effect);
                         switch (effect) {
                             case 1:
@@ -193,6 +195,9 @@ public class YTPGenerator {
                                 if (effect11==true && toolBox.randomInt(0, 99) < 50)
                                 effectsFactory.effect_Squidward(clipToWorkWith);
                                 break;
+                            case 12:
+                                if (effect12==true)
+                                effectsFactory.effect_Mirror(clipToWorkWith);
                             default:
                                 //toolBox.convertVideo(clipToWorkWith);
                                 break;

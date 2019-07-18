@@ -371,4 +371,21 @@ public class EffectsFactory {
             squidwardScript.delete();
         } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
+
+    public void effect_Mirror(String video){
+        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+        try {
+            File in = new File(video);
+            File temp = new File(toolBox.getTempVideoName());
+            if (in.exists())
+                in.renameTo(temp);
+
+            boolean flip = toolBox.randomInt(0, 1) == 0;
+            toolBox.execFFmpeg("-i", temp.getPath(),
+                "-vf", "crop=iw/2:ih:" + (flip ? "0:0" : "iw/2:ih") + ",split[part0][tmp];"
+                + "[tmp]hflip[part1];" + (flip ? "[part0][part1]" : "[part1][part0]") + "hstack",
+                "-y", video);
+            temp.delete();
+        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+    }
 }
