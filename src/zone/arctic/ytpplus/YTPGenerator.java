@@ -128,13 +128,15 @@ public class YTPGenerator {
                     IntStream.range(0, MAX_CLIPS).parallel().forEach(i -> {
                         String sourceToPick = sourceList.get(toolBox.randomInt(0, sourceList.size() - 1));
                         System.out.println(sourceToPick);
-                        System.out.println(toolBox.getLength(sourceToPick));
                         TimeStamp boy = new TimeStamp(Double.parseDouble(toolBox.getLength(sourceToPick)));
-                        System.out.println(boy.getTimeStamp());
-                        System.out.println("STARTING CLIP " + "video" + i);
-                        TimeStamp startOfClip = new TimeStamp(randomDouble(0.0, boy.getLengthSec() - MAX_STREAM_DURATION));
-                        //System.out.println("boy seconds = "+  boy.getLengthSec());
-                        TimeStamp endOfClip = new TimeStamp(startOfClip.getLengthSec() + randomDouble(MIN_STREAM_DURATION, MAX_STREAM_DURATION));
+                        System.out.println("STARTING CLIP " + "video" + i + " of length " + boy.getLengthSec());
+                        double start = 0.0, end = boy.getLengthSec();
+                        if (end > getMinDuration()) {
+                            start = toolBox.randomDouble(0.0, end - getMinDuration());
+                            end = start + toolBox.randomDouble(getMinDuration(), Math.min(end - start, getMaxDuration()));
+                        }
+                        TimeStamp startOfClip = new TimeStamp(start);
+                        TimeStamp endOfClip = new TimeStamp(end);
                         System.out.println("Beginning of clip " + i + ": " + startOfClip.getTimeStamp());
                         System.out.println("Ending of clip " + i + ": " + endOfClip.getTimeStamp() + ", in seconds: ");
                         String clipToWorkWith = toolBox.TEMP+"video" + i + ".mp4";
@@ -213,15 +215,6 @@ public class YTPGenerator {
 
     public boolean isDone() {
         return done;
-    }
-
-    public static double randomDouble(double min, double max) {
-        double finalVal = -1;
-        while (finalVal<0) {
-            double x = (Math.random() * ((max - min) + 0)) + min;
-            finalVal=Math.round(x * 100.0) / 100.0;
-        }
-        return finalVal;
     }
 
     public void cleanUp() {
