@@ -305,7 +305,7 @@ public class EffectsFactory {
                 cmdLine.add("convert");
                 cmdLine.add(picturePrefix + "squidward0.png");
 
-                while ((squidSwitch = toolBox.randomInt(0, 4)) == squidPrev);
+                while ((squidSwitch = toolBox.randomInt(0, 6)) == squidPrev);
                 switch ((squidPrev = squidSwitch)) {
                     case 0:
                         cmdLine.add("-flop");
@@ -314,14 +314,16 @@ public class EffectsFactory {
                         cmdLine.add("-flip");
                         break;
                     case 2:
-                        cmdLine.add("-implode");
-                        cmdLine.add((toolBox.randomBool() ? "-" : "") + toolBox.randomInt(1, 3));
-                        break;
                     case 3:
-                        cmdLine.add("-swirl");
-                        cmdLine.add((toolBox.randomBool() ? "-" : "") + toolBox.randomInt(1, 180));
+                        cmdLine.add("-implode");
+                        cmdLine.add((squidPrev == 3 ? "-" : "") + toolBox.randomInt(1, 3));
                         break;
                     case 4:
+                    case 5:
+                        cmdLine.add("-swirl");
+                        cmdLine.add((squidPrev == 5 ? "-" : "") + toolBox.randomInt(1, 180));
+                        break;
+                    case 6:
                         cmdLine.add("-channel");
                         cmdLine.add("RGB");
                         cmdLine.add("-negate");
