@@ -147,12 +147,20 @@ public class Utilities {
         return exec(MAGICK, args);
     }
 
-    public synchronized int randomInt(int min, int max) {
+    public int randomInt(int min, int max) {
         return random.nextInt((max - min) + 1) + min;
     }
 
     public int randomInt() {
         return randomInt(0, (1 << 30) - 1);
+    }
+
+    public double randomDouble() {
+        return random.nextDouble();
+    }
+
+    public double randomDouble(double min, double max) {
+        return random.nextDouble() * (max - min) + min;
     }
 
     public boolean randomBool() {
