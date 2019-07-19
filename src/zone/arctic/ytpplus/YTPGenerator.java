@@ -9,31 +9,128 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.IntStream;
+import java.lang.reflect.Method;
 
 public class YTPGenerator {
-
-    public static double MAX_STREAM_DURATION = 0.4; //default: 2s
-    public static double MIN_STREAM_DURATION = 0.2; //default: 0.2s
-    public static int MAX_CLIPS = 20; //default: 5 clips
-    public static String INPUT_FILE; //Input video file
-    public static String OUTPUT_FILE; //the video file that will be produced in the end
-
-    public boolean randomSound;
-    public boolean randomSoundMute;
-    public boolean reverse;
-    public boolean speedUp;
-    public boolean slowDown;
-    public boolean chorus;
-    public boolean vibrato;
-    public boolean highPitch;
-    public boolean lowPitch;
-    public boolean dance;
-    public boolean squidward;
-    public boolean mirror;
-    public boolean insertTransitionClips;
+    private double MAX_STREAM_DURATION = 0.4;
+    private double MIN_STREAM_DURATION = 0.2;
+    private int MAX_CLIPS = 20;
+    private String OUTPUT_FILE;
 
     public Utilities toolBox = new Utilities();
+
+    private Map<String, Integer> effects = new HashMap<String, Integer>();
+    private int transitionClipChance = 0;
+    private int effectChance = 50;
+
+    EffectsFactory effectsFactory = new EffectsFactory(toolBox);
+    ArrayList<String> sourceList = new ArrayList<String>();
+    public volatile boolean done = false;
+    public volatile double doneCount = 0;
+
+    public YTPGenerator(String output) {
+        setOutputFile(output);
+    }
+
+    public YTPGenerator(String output, double min, double max) {
+        setOutputFile(output);
+        setMinDuration(min);
+        setMaxDuration(max);
+    }
+
+    public YTPGenerator(String output, double min, double max, int maxclips) {
+        setOutputFile(output);
+        setMinDuration(min);
+        setMaxDuration(max);
+        setMaxClips(maxclips);
+    }
+
+    public void setMaxClips(int clips) {
+        MAX_CLIPS = clips;
+    }
+
+    public int getMaxClips() {
+        return MAX_CLIPS;
+    }
+
+    public void setMinDuration(double min) {
+        MIN_STREAM_DURATION = min;
+    }
+
+    public double getMinDuration() {
+        return MIN_STREAM_DURATION;
+    }
+
+    public void setMaxDuration(double max) {
+        MAX_STREAM_DURATION = max;
+    }
+
+    public double getMaxDuration() {
+        return MAX_STREAM_DURATION;
+    }
+
+    public void setOutputFile(String out) {
+        OUTPUT_FILE = out;
+    }
+
+    public String getOutputFile() {
+        return OUTPUT_FILE;
+    }
+
+    public void setEffectChance(int chance) {
+        effectChance = Math.min(100, chance);
+    }
+
+    public int getEffectChance() {
+        return effectChance;
+    }
+
+    public void setTransitionClipChance(int chance) {
+        transitionClipChance = Math.min(100, chance);
+    }
+
+    public int getTransitionClipChance() {
+        return transitionClipChance;
+    }
+
+    public boolean addSource(String sourceName) {
+        sourceList.add(sourceName);
+        /* TO DO: Validate source before adding */
+        return true;
+    }
+    public boolean setEffect(String name, int likelyness) {
+        try {
+            /* This method will throw exception if effect doesn't exist */
+            EffectsFactory.class.getMethod("effect_" + name, String.class);
+            if (likelyness > 0)
+                effects.put(name, likelyness);
+            else
+                effects.remove(name);
+
+            return true;
+        } catch (Exception ex) {
+            System.out.println("Failed to set effect: " + ex);
+        }
+        return false;
+    }
+
+    public void setupDefaultEffects() {
+        effects.put("RandomSound", 10);
+        effects.put("RandomSoundMute", 10);
+        effects.put("Reverse", 10);
+        effects.put("SlowDown", 10);
+        effects.put("SpeedUp", 10);
+        effects.put("Squidward", 10);
+        effects.put("Vibrato", 10);
+        effects.put("Chorus", 10);
+        effects.put("Dance", 10);
+        effects.put("HighPitch", 10);
+        effects.put("LowPitch", 10);
+        effects.put("Mirror", 10);
+    }
 
     public void configurate() {
         //add some code to load this from a .cfg file later
@@ -46,59 +143,9 @@ public class YTPGenerator {
         toolBox.SOUNDS = "sounds/";
         toolBox.MUSIC = "music/";
         toolBox.RESOURCES = "resources/";
+        setupDefaultEffects();
 
-        randomSound=true;
-        randomSoundMute=true;
-        reverse=true;
-        speedUp=true;
-        slowDown=true;
-        chorus=true;
-        vibrato=true;
-        highPitch=true;
-        lowPitch=true;
-        dance=true;
-        squidward=true;
-        mirror=true;
-
-        insertTransitionClips=true;
-    }
-
-    EffectsFactory effectsFactory = new EffectsFactory(toolBox);
-    ArrayList<String> sourceList = new ArrayList<String>();
-    public volatile boolean done = false;
-    public volatile double doneCount = 0;
-
-    public YTPGenerator(String output) {
-        this.OUTPUT_FILE = output;
-        //configurate();
-    }
-
-    public YTPGenerator(String output, double min, double max) {
-        this.OUTPUT_FILE = output;
-        this.MIN_STREAM_DURATION = min;
-        this.MAX_STREAM_DURATION = max;
-        //configurate();
-    }
-    public YTPGenerator(String output, double min, double max, int maxclips) {
-        this.OUTPUT_FILE = output;
-        this.MIN_STREAM_DURATION = min;
-        this.MAX_STREAM_DURATION = max;
-        this.MAX_CLIPS = maxclips;
-        //configurate();
-    }
-
-    public void setMaxClips(int clips) {
-        this.MAX_CLIPS = clips;
-    }
-    public void setMinDuration(double min) {
-        this.MIN_STREAM_DURATION = min;
-    }
-    public void setMaxDuration(double max) {
-        this.MAX_STREAM_DURATION = max;
-    }
-
-    public void addSource(String sourceName) {
-        sourceList.add(sourceName);
+        setTransitionClipChance(6);
     }
 
     public void go() {
@@ -110,22 +157,26 @@ public class YTPGenerator {
         System.out.println("My SOURCES is: " + toolBox.SOURCES);
         System.out.println("My MUSIC is: " + toolBox.MUSIC);
         System.out.println("My RESOURCES is: " + toolBox.RESOURCES);
+        if (sourceList.isEmpty()) {
+            System.out.println("No sources added...");
+            return;
+        }
+        try {
+            effectsFactory.configureEffects(effects);
+        } catch (Exception ex) {
+            System.out.println("Failed to configure effects: " + ex);
+            return;
+        }
         Thread vidThread = new Thread() {
             public void run() {
-                if (sourceList.isEmpty()) {
-                    System.out.println("No sources added...");
-                    return;
-                }
-
                 System.out.println("poop_1");
-                File out = new File(OUTPUT_FILE);
+                File out = new File(getOutputFile());
                 if (out.exists()) {
                     out.delete();
                 }
                 cleanUp();
-
                 try {
-                    IntStream.range(0, MAX_CLIPS).parallel().forEach(i -> {
+                    IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
                         String sourceToPick = sourceList.get(toolBox.randomInt(0, sourceList.size() - 1));
                         System.out.println(sourceToPick);
                         TimeStamp boy = new TimeStamp(Double.parseDouble(toolBox.getLength(sourceToPick)));
@@ -139,70 +190,20 @@ public class YTPGenerator {
                         TimeStamp endOfClip = new TimeStamp(end);
                         System.out.println("Beginning of clip " + i + ": " + startOfClip.getTimeStamp());
                         System.out.println("Ending of clip " + i + ": " + endOfClip.getTimeStamp() + ", in seconds: ");
-                        String clipToWorkWith = toolBox.TEMP+"video" + i + ".mp4";
-                        if (insertTransitionClips && toolBox.randomInt(0, 15) == 15) {
+
+                        String clipToWorkWith = toolBox.TEMP + "video" + i + ".mp4";
+                        if (getTransitionClipChance() > 0 && toolBox.randomInt(0, 99) < getTransitionClipChance()) {
                             System.out.println("Tryina use a diff source");
                             toolBox.copyVideo(effectsFactory.pickSource(), clipToWorkWith);
                         } else {
                             toolBox.snipVideo(sourceToPick, startOfClip, endOfClip, clipToWorkWith);
                         }
-                        //Add a random effect to the video
-                        int effect = toolBox.randomBool() ? toolBox.randomInt(1, 12) : 0;
-                        System.out.println("STARTING EFFECT ON CLIP " + i + " EFFECT" + effect);
-                        switch (effect) {
-                            case 1:
-                                if (randomSound)
-                                    effectsFactory.effect_RandomSound(clipToWorkWith);
-                                break;
-                            case 2:
-                                if (randomSoundMute)
-                                    effectsFactory.effect_RandomSoundMute(clipToWorkWith);
-                                break;
-                            case 3:
-                                if (reverse)
-                                    effectsFactory.effect_Reverse(clipToWorkWith);
-                                break;
-                            case 4:
-                                if (speedUp)
-                                    effectsFactory.effect_SpeedUp(clipToWorkWith);
-                                break;
-                            case 5:
-                                if (slowDown)
-                                    effectsFactory.effect_SlowDown(clipToWorkWith);
-                                break;
-                            case 6:
-                                if (chorus)
-                                    effectsFactory.effect_Chorus(clipToWorkWith);
-                                break;
-                            case 7:
-                                if (vibrato)
-                                    effectsFactory.effect_Vibrato(clipToWorkWith);
-                                break;
-                            case 8:
-                                if (highPitch)
-                                    effectsFactory.effect_HighPitch(clipToWorkWith);
-                                break;
-                            case 9:
-                                if (lowPitch)
-                                    effectsFactory.effect_LowPitch(clipToWorkWith);
-                                break;
-                            case 10:
-                                if (dance)
-                                    effectsFactory.effect_Dance(clipToWorkWith);
-                                break;
-                            case 11:
-                                if (squidward && toolBox.randomInt(0, 99) < 35)
-                                    effectsFactory.effect_Squidward(clipToWorkWith);
-                                break;
-                            case 12:
-                                if (mirror)
-                                    effectsFactory.effect_Mirror(clipToWorkWith);
-                            default:
-                                break;
-                        }
-                        doneCount += 1.0 / MAX_CLIPS;
+                        if (toolBox.randomInt(0, 99) < getEffectChance())
+                            effectsFactory.applyRandomEffect(clipToWorkWith);
+
+                        doneCount += 1.0 / getMaxClips();
                     });
-                    toolBox.concatenateVideo(MAX_CLIPS, OUTPUT_FILE);
+                    toolBox.concatenateVideo(getMaxClips(), getOutputFile());
                 } catch (Exception ex) { ex.printStackTrace(); }
                 rmDir(new File(toolBox.TEMP));
                 done = true;
@@ -221,7 +222,8 @@ public class YTPGenerator {
         File mp4 = new File(toolBox.TEMP + "temp.mp4");
         if (mp4.exists())
             mp4.delete();
-        for (int i=0; i<MAX_CLIPS; i++) {
+
+        for (int i=0; i < getMaxClips(); i++) {
             File del = new File(toolBox.TEMP + "video"+i+".mp4");
             if (del.exists()) {
                 System.out.println(i + " Exists");

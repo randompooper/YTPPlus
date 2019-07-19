@@ -10,13 +10,18 @@ import java.io.FilenameFilter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Set;
+import java.util.Map;
+import java.util.TreeMap;
+import java.lang.reflect.Method;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 
 
 public class EffectsFactory {
-
     public Utilities toolBox;
+
+    private TreeMap<Double, Method> map;
 
     public EffectsFactory(Utilities utilities) {
         this.toolBox = utilities;
@@ -391,5 +396,38 @@ public class EffectsFactory {
                 "-y", video);
             temp.delete();
         } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+    }
+
+    public void configureEffects(Map<String, Integer> options) throws NoSuchMethodException {
+        double l = 0.0, totalLikelyness = 0.0;
+        map = new TreeMap<Double, Method>();
+        Set<Map.Entry<String, Integer>> optionSet = options.entrySet();
+        for (Map.Entry<String, Integer> opt: optionSet)
+            if (opt.getValue() > 0)
+                totalLikelyness += opt.getValue();
+
+        for (Map.Entry<String, Integer> opt : optionSet)
+            if (opt.getValue() > 0) {
+                l += (double)opt.getValue() / totalLikelyness;
+                map.put(l, EffectsFactory.class.getMethod("effect_" + opt.getKey(), String.class));
+            }
+        for (Map.Entry<Double, Method> o : map.entrySet())
+            System.out.println("" + o.getKey() + " = " + o.getValue());
+    }
+
+    public void applyRandomEffect(String video) {
+        if (map == null || map.size() == 0)
+            return;
+
+        double randFloat = toolBox.randomDouble();
+        Map.Entry<Double, Method> effect = map.higherEntry(randFloat);
+        System.out.println("Random float " + randFloat + "; Found " + effect);
+        Method method = effect.getValue();
+        System.out.println("Starting effect " + method.getName());
+        try {
+            method.invoke(this, video);
+        } catch (Exception ex) {
+            System.out.println("Failed to apply random effect: " + ex);
+        }
     }
 }
