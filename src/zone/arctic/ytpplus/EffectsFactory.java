@@ -238,12 +238,14 @@ public class EffectsFactory {
                 temp6.delete();
 
             String randomSound = pickMusic();
-            int randomTime = toolBox.randomInt(3,9);
-            int randomTime2 = toolBox.randomInt(0,1);
+            double soundLength = Double.parseDouble(toolBox.getLength(randomSound)) / 8.0;
+            if (soundLength > 0.3)
+                soundLength = toolBox.randomDouble(0.3, Math.min(soundLength, 1.9));
 
+            TimeStamp ts = new TimeStamp(soundLength);
             toolBox.execFFmpeg("-i", temp.getPath(),
                 "-map", "0", // "-c:v", "copy",
-                "-to", "00:00:0"+randomTime2+"." + randomTime,
+                "-to", ts.getTimeStamp(),
                 "-an", "-y", temp2.getPath());
             toolBox.execFFmpeg("-i", temp2.getPath(),
                 "-map", "0", // "-c:v", "copy",
