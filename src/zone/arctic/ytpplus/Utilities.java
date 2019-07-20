@@ -2,6 +2,7 @@ package zone.arctic.ytpplus;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.nio.file.Files;
 import java.io.InputStreamReader;
 import java.util.Random;
 import org.apache.commons.exec.CommandLine;
@@ -14,22 +15,86 @@ import org.apache.commons.exec.DefaultExecutor;
  */
 public class Utilities {
 
-    public String FFPROBE;
-    public String FFMPEG;
-    public String MAGICK;
+    private String FFPROBE;
+    private String FFMPEG;
+    private String MAGICK;
 
-    public String TEMP = "";
-    public String SOURCES = "";
-    public String SOUNDS = "";
-    public String MUSIC = "";
-    public String RESOURCES = "";
     private Random random = new Random();
+    private String TEMP = "";
+    private String SOURCES = "";
+    private String SOUNDS = "";
+    private String MUSIC = "";
+    private String RESOURCES = "";
+
+    public void setFFmpeg(String path) {
+        FFMPEG = new String(path);
+    }
+
+    public String getFFmpeg() {
+        return FFMPEG;
+    }
+
+    public void setFFprobe(String path) {
+        FFPROBE = new String(path);
+    }
+
+    public String getFFprobe() {
+        return FFPROBE;
+    }
+
+    public void setMagick(String path) {
+        MAGICK = new String(path);
+    }
+
+    public String getMagick() {
+        return MAGICK;
+    }
+
+    public void setTemp(String path) {
+        TEMP = path + "/";
+    }
+
+    public String getTemp() {
+        return TEMP;
+    }
+
+    public void setSources(String path) {
+        SOURCES = path + "/";
+    }
+
+    public String getSources() {
+        return SOURCES;
+    }
+
+    public void setSounds(String path) {
+        SOUNDS = path + "/";
+    }
+
+    public String getSounds() {
+        return SOUNDS;
+    }
+
+    public void setMusic(String path) {
+        MUSIC = path + "/";
+    }
+
+    public String getMusic() {
+        return MUSIC;
+    }
+
+    public void setResources(String path) {
+        RESOURCES = path + "/";
+    }
+
+    public String getResources() {
+        return RESOURCES;
+    }
 
     public String getLength(String file) {
         try {
             Runtime rt = Runtime.getRuntime();
             Process proc = rt.exec(new String[] {
-                FFPROBE,
+                getFFprobe(),
                 "-i", file,
                 "-show_entries", "format=duration",
                 "-v", "error",
@@ -108,7 +173,7 @@ public class Utilities {
                 export.delete();
 
             int realcount = 0;
-            CommandLine cmdLine = new CommandLine(FFMPEG);
+            CommandLine cmdLine = new CommandLine(getFFmpeg());
             for (int i = 0; i < count; i++) {
                 File vid = new File(TEMP + "video" + i + ".mp4");
                 if (vid.exists()) {
@@ -140,11 +205,11 @@ public class Utilities {
     }
 
     public int execFFmpeg(String ...args) throws Exception {
-        return exec(FFMPEG, args);
+        return exec(getFFmpeg(), args);
     }
 
     public int execMagick(String ...args) throws Exception {
-        return exec(MAGICK, args);
+        return exec(getMagick(), args);
     }
 
     public int randomInt(int min, int max) {
@@ -178,5 +243,17 @@ public class Utilities {
         while (file.exists());
 
         return file;
+    }
+
+    public static void rmDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                if (!Files.isSymbolicLink(f.toPath())) {
+                    rmDir(f);
+                }
+            }
+        }
+        file.delete();
     }
 }

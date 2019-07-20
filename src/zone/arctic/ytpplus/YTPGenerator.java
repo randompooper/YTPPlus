@@ -7,7 +7,6 @@ package zone.arctic.ytpplus;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -20,14 +19,15 @@ public class YTPGenerator {
     private int MAX_CLIPS = 20;
     private String OUTPUT_FILE;
 
-    public Utilities toolBox = new Utilities();
+    private Utilities toolBox = new Utilities();
 
     private Map<String, Integer> effects = new HashMap<String, Integer>();
     private int transitionClipChance = 0;
     private int effectChance = 50;
 
-    EffectsFactory effectsFactory = new EffectsFactory(toolBox);
-    ArrayList<String> sourceList = new ArrayList<String>();
+    private EffectsFactory effectsFactory = new EffectsFactory(toolBox);
+    private ArrayList<String> sourceList = new ArrayList<String>();
+
     public volatile boolean done = false;
     public volatile double doneCount = 0;
 
@@ -73,7 +73,7 @@ public class YTPGenerator {
     }
 
     public void setOutputFile(String out) {
-        OUTPUT_FILE = out;
+        OUTPUT_FILE = new String(out);
     }
 
     public String getOutputFile() {
@@ -97,10 +97,75 @@ public class YTPGenerator {
     }
 
     public boolean addSource(String sourceName) {
-        sourceList.add(sourceName);
+        sourceList.add(new String(sourceName));
         /* TO DO: Validate source before adding */
         return true;
     }
+
+    public void setFFmpeg(String path) {
+        toolBox.setFFmpeg(path);
+    }
+
+    public String getFFmpeg() {
+        return toolBox.getFFmpeg();
+    }
+
+    public void setFFprobe(String path) {
+        toolBox.setFFprobe(path);
+    }
+
+    public String getFFprobe() {
+        return toolBox.getFFprobe();
+    }
+
+    public void setMagick(String path) {
+        toolBox.setMagick(path);
+    }
+
+    public String getMagick() {
+        return toolBox.getMagick();
+    }
+
+    public void setTemp(String path) {
+        toolBox.setTemp(path);
+    }
+
+    public String getTemp() {
+        return toolBox.getTemp();
+    }
+
+    public void setSources(String path) {
+        toolBox.setSources(path);
+    }
+
+    public String getSources() {
+        return toolBox.getSources();
+    }
+
+    public void setSounds(String path) {
+        toolBox.setSounds(path);
+    }
+
+    public String getSounds() {
+        return toolBox.getSounds();
+    }
+
+    public void setMusic(String path) {
+        toolBox.setMusic(path);
+    }
+
+    public String getMusic() {
+        return toolBox.getMusic();
+    }
+
+    public void setResources(String path) {
+        toolBox.setResources(path);
+    }
+
+    public String getResources() {
+        return toolBox.getResources();
+    }
+
     public boolean setEffect(String name, int likelyness) {
         try {
             /* This method will throw exception if effect doesn't exist */
@@ -134,29 +199,29 @@ public class YTPGenerator {
 
     public void configurate() {
         //add some code to load this from a .cfg file later
-        toolBox.FFMPEG = "ffmpeg";
-        toolBox.FFPROBE = "ffprobe";
-        toolBox.MAGICK = "magick";
-        toolBox.TEMP = "temp/job_" + System.currentTimeMillis() + "/";
-        new File(toolBox.TEMP).mkdir();
-        toolBox.SOURCES = "sources/";
-        toolBox.SOUNDS = "sounds/";
-        toolBox.MUSIC = "music/";
-        toolBox.RESOURCES = "resources/";
+        setFFmpeg("ffmpeg");
+        setFFprobe("ffprobe");
+        setMagick("magick");
+        setTemp("temp/job_" + System.currentTimeMillis() + "/");
+        new File(toolBox.getTemp()).mkdir();
+        setSources("sources/");
+        setSounds("sounds/");
+        setMusic("music/");
+        setResources("resources/");
         setupDefaultEffects();
 
         setTransitionClipChance(6);
     }
 
     public void go() {
-        System.out.println("My FFMPEG is: " + toolBox.FFMPEG);
-        System.out.println("My FFPROBE is: " + toolBox.FFPROBE);
-        System.out.println("My MAGICK is: " + toolBox.MAGICK);
-        System.out.println("My TEMP is: " + toolBox.TEMP);
-        System.out.println("My SOUNDS is: " + toolBox.SOUNDS);
-        System.out.println("My SOURCES is: " + toolBox.SOURCES);
-        System.out.println("My MUSIC is: " + toolBox.MUSIC);
-        System.out.println("My RESOURCES is: " + toolBox.RESOURCES);
+        System.out.println("My FFMPEG is: " + toolBox.getFFmpeg());
+        System.out.println("My FFPROBE is: " + toolBox.getFFprobe());
+        System.out.println("My MAGICK is: " + toolBox.getMagick());
+        System.out.println("My TEMP is: " + toolBox.getTemp());
+        System.out.println("My SOUNDS is: " + toolBox.getSounds());
+        System.out.println("My SOURCES is: " + toolBox.getSources());
+        System.out.println("My MUSIC is: " + toolBox.getMusic());
+        System.out.println("My RESOURCES is: " + toolBox.getResources());
         if (sourceList.isEmpty()) {
             System.out.println("No sources added...");
             return;
@@ -179,9 +244,10 @@ public class YTPGenerator {
                     IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
                         String sourceToPick = sourceList.get(toolBox.randomInt(sourceList.size() - 1));
                         System.out.println(sourceToPick);
-                        TimeStamp boy = new TimeStamp(Double.parseDouble(toolBox.getLength(sourceToPick)));
-                        System.out.println("STARTING CLIP " + "video" + i + " of length " + boy.getLengthSec());
-                        double start = 0.0, end = boy.getLengthSec();
+                        double clipLength = Double.parseDouble(toolBox.getLength(sourceToPick));
+                        TimeStamp boy = new TimeStamp(clipLength);
+                        System.out.println("STARTING CLIP " + "video" + i + " of length " + clipLength);
+                        double start = 0.0, end = clipLength;
                         if (end > getMinDuration()) {
                             start = toolBox.randomDouble(0.0, end - getMinDuration());
                             end = start + toolBox.randomDouble(getMinDuration(), Math.min(end - start, getMaxDuration()));
@@ -191,7 +257,7 @@ public class YTPGenerator {
                         System.out.println("Beginning of clip " + i + ": " + startOfClip.getTimeStamp());
                         System.out.println("Ending of clip " + i + ": " + endOfClip.getTimeStamp() + ", in seconds: ");
 
-                        String clipToWorkWith = toolBox.TEMP + "video" + i + ".mp4";
+                        String clipToWorkWith = toolBox.getTemp() + "video" + i + ".mp4";
                         if (getTransitionClipChance() > 0 && toolBox.randomInt(99) < getTransitionClipChance()) {
                             System.out.println("Tryina use a diff source");
                             toolBox.copyVideo(effectsFactory.pickSource(), clipToWorkWith);
@@ -205,7 +271,7 @@ public class YTPGenerator {
                     });
                     toolBox.concatenateVideo(getMaxClips(), getOutputFile());
                 } catch (Exception ex) { ex.printStackTrace(); }
-                rmDir(new File(toolBox.TEMP));
+                Utilities.rmDir(new File(toolBox.getTemp()));
                 done = true;
             }
         };
@@ -213,35 +279,25 @@ public class YTPGenerator {
 
     }
 
-
     public boolean isDone() {
         return done;
     }
 
     public void cleanUp() {
-        File mp4 = new File(toolBox.TEMP + "temp.mp4");
+        //Create concatenation text file
+        File text = new File(toolBox.getTemp() + "concat.txt");
+        if (text.exists())
+            text.delete();
+        File mp4 = new File(toolBox.getTemp() + "temp.mp4");
         if (mp4.exists())
             mp4.delete();
 
         for (int i=0; i < getMaxClips(); i++) {
-            File del = new File(toolBox.TEMP + "video"+i+".mp4");
+            File del = new File(toolBox.getTemp() + "video" + i + ".mp4");
             if (del.exists()) {
                 System.out.println(i + " Exists");
                 del.delete();
             }
         }
-
     }
-    public void rmDir(File file) {
-        File[] contents = file.listFiles();
-        if (contents != null) {
-            for (File f : contents) {
-                if (! Files.isSymbolicLink(f.toPath())) {
-                    rmDir(f);
-                }
-            }
-        }
-        file.delete();
-    }
-
 }

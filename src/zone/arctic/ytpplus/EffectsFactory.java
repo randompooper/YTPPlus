@@ -28,18 +28,18 @@ public class EffectsFactory {
     }
 
     public String pickSound() {
-        File[] files = new File(toolBox.SOUNDS).listFiles();
+        File[] files = new File(toolBox.getSounds()).listFiles();
         File file = files[toolBox.randomInt(files.length - 1)];
         return file.getPath();
     }
     public String pickSource() {
-        File[] files = new File(toolBox.SOURCES).listFiles();
+        File[] files = new File(toolBox.getSources()).listFiles();
         File file = files[toolBox.randomInt(files.length - 1)];
         return file.getPath();
     }
 
     public String pickMusic() {
-        File[] files = new File(toolBox.MUSIC).listFiles();
+        File[] files = new File(toolBox.getMusic()).listFiles();
         File file = files[toolBox.randomInt(files.length - 1)];
         return file.getPath();
     }
@@ -281,7 +281,7 @@ public class EffectsFactory {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile(); //og file
             int pictureNum = toolBox.randomInt();
-            String picturePrefix = toolBox.TEMP + pictureNum + "-";
+            String picturePrefix = toolBox.getTemp() + pictureNum + "-";
 
             // final result is backwards & forwards concatenated with music
 
@@ -336,8 +336,7 @@ public class EffectsFactory {
             if (squidwardScript.exists())
                 squidwardScript.delete();
             PrintWriter writer = new PrintWriter(squidwardScript, "UTF-8");
-            writer.write
-                        ("file " + pictureNum + "-squidward0.png\n" +
+            writer.write("file " + pictureNum + "-squidward0.png\n" +
                         "duration 0.467\n" +
                         "file " + pictureNum + "-squidward1.png\n" +
                         "duration 0.434\n" +
@@ -357,7 +356,7 @@ public class EffectsFactory {
              */
             toolBox.execFFmpeg("-f", "concat",
                 "-i", picturePrefix + "concatsquidward.txt",
-                "-i", toolBox.RESOURCES + "squidward/music.wav",
+                "-i", toolBox.getResources() + "squidward/music.wav",
                 "-map", "0:v:0", "-map", "1:a:0", "-pix_fmt", "yuv420p",
                 "-y", video);
 
