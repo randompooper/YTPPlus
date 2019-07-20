@@ -167,7 +167,12 @@ public class Utilities {
         return random.nextBoolean();
     }
 
-    public String getTempVideoName() {
-        return TEMP + randomInt() + "-temp.mp4";
+    public File getTempVideoFile() {
+        File file;
+        do
+            file = new File(getTemp() + randomInt() + "-temp.mp4");
+        while (file.exists());
+
+        return file;
     }
 }

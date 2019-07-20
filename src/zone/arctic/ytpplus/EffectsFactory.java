@@ -49,7 +49,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -72,12 +72,10 @@ public class EffectsFactory {
             String soundLength = toolBox.getLength(randomSound);
             System.out.println("Doing a mute now. " + randomSound + " length: " + soundLength + ".");
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
-            File temp2 = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
+            File temp2 = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
-            if (temp2.exists())
-                temp2.delete();
 
             toolBox.execFFmpeg("-i", temp.getPath(),
                 "-af", "volume=0",
@@ -91,6 +89,7 @@ public class EffectsFactory {
                "-map", "0:v",
                "-map", "[out]",
                "-y", video);
+
             temp.delete();
             temp2.delete();
         } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
@@ -99,12 +98,10 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
-            File temp2 = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
+            File temp2 = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
-            if (temp2.exists())
-                temp2.delete();
 
             toolBox.execFFmpeg("-i", temp.getPath(),
                 "-map", "0",
@@ -113,6 +110,7 @@ public class EffectsFactory {
             toolBox.execFFmpeg("-i", temp2.getPath(),
                 "-vf", "reverse",
                 "-y", video);
+
             temp.delete();
             temp2.delete();
         } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
@@ -123,7 +121,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -131,6 +129,7 @@ public class EffectsFactory {
                 "-filter:v", "setpts=0.5*PTS",
                 "-filter:a", "atempo=2.0",
                 "-y", video);
+
             temp.delete();
         } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
@@ -139,7 +138,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -157,7 +156,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -172,7 +171,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -187,7 +186,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -203,7 +202,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
@@ -220,27 +219,17 @@ public class EffectsFactory {
         try {
             File in = new File(video);
 
-            File temp = new File(toolBox.getTempVideoName()); //og file
-            File temp2 = new File(toolBox.getTempVideoName()); //1st cut
-            File temp3 = new File(toolBox.getTempVideoName()); //backwards (silent
-            File temp4 = new File(toolBox.getTempVideoName()); //forwards (silent
-            File temp5 = new File(toolBox.getTempVideoName()); //backwards & forwards concatenated
-            File temp6 = new File(toolBox.getTempVideoName()); //backwards & forwards concatenated
+            File temp = toolBox.getTempVideoFile(); //og file
+            File temp2 = toolBox.getTempVideoFile(); //1st cut
+            File temp3 = toolBox.getTempVideoFile(); //backwards (silent
+            File temp4 = toolBox.getTempVideoFile(); //forwards (silent
+            File temp5 = toolBox.getTempVideoFile(); //backwards & forwards concatenated
+            File temp6 = toolBox.getTempVideoFile(); //backwards & forwards concatenated
 
             // final result is backwards & forwards concatenated with music
 
             if (in.exists())
                 in.renameTo(temp);
-            if (temp2.exists())
-                temp2.delete();
-            if (temp3.exists())
-                temp3.delete();
-            if (temp4.exists())
-                temp4.delete();
-            if (temp5.exists())
-                temp5.delete();
-            if (temp6.exists())
-                temp6.delete();
 
             String randomSound = pickMusic();
             double soundLength = Double.parseDouble(toolBox.getLength(randomSound)) / 8.0;
@@ -290,7 +279,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName()); //og file
+            File temp = toolBox.getTempVideoFile(); //og file
             int pictureNum = toolBox.randomInt();
             String picturePrefix = toolBox.TEMP + pictureNum + "-";
 
@@ -385,7 +374,7 @@ public class EffectsFactory {
         System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
-            File temp = new File(toolBox.getTempVideoName());
+            File temp = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
