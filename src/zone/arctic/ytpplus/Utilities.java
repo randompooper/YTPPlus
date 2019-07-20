@@ -151,8 +151,12 @@ public class Utilities {
         return random.nextInt((max - min) + 1) + min;
     }
 
+    public int randomInt(int max) {
+        return random.nextInt(max + 1);
+    }
+
     public int randomInt() {
-        return randomInt(0, (1 << 30) - 1);
+        return randomInt((1 << 30) - 1);
     }
 
     public double randomDouble() {

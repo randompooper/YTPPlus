@@ -29,18 +29,18 @@ public class EffectsFactory {
 
     public String pickSound() {
         File[] files = new File(toolBox.SOUNDS).listFiles();
-        File file = files[toolBox.randomInt(0, files.length - 1)];
+        File file = files[toolBox.randomInt(files.length - 1)];
         return file.getPath();
     }
     public String pickSource() {
         File[] files = new File(toolBox.SOURCES).listFiles();
-        File file = files[toolBox.randomInt(0, files.length - 1)];
+        File file = files[toolBox.randomInt(files.length - 1)];
         return file.getPath();
     }
 
     public String pickMusic() {
         File[] files = new File(toolBox.MUSIC).listFiles();
-        File file = files[toolBox.randomInt(0, files.length - 1)];
+        File file = files[toolBox.randomInt(files.length - 1)];
         return file.getPath();
     }
 
@@ -299,7 +299,7 @@ public class EffectsFactory {
                 cmdLine.add("convert");
                 cmdLine.add(picturePrefix + "squidward0.png");
 
-                while ((squidSwitch = toolBox.randomInt(0, 6)) == squidPrev);
+                while ((squidSwitch = toolBox.randomInt(6)) == squidPrev);
                 switch ((squidPrev = squidSwitch)) {
                     case 0:
                         cmdLine.add("-flop");

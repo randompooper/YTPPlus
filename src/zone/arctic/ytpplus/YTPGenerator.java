@@ -177,7 +177,7 @@ public class YTPGenerator {
                 cleanUp();
                 try {
                     IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
-                        String sourceToPick = sourceList.get(toolBox.randomInt(0, sourceList.size() - 1));
+                        String sourceToPick = sourceList.get(toolBox.randomInt(sourceList.size() - 1));
                         System.out.println(sourceToPick);
                         TimeStamp boy = new TimeStamp(Double.parseDouble(toolBox.getLength(sourceToPick)));
                         System.out.println("STARTING CLIP " + "video" + i + " of length " + boy.getLengthSec());
@@ -192,13 +192,13 @@ public class YTPGenerator {
                         System.out.println("Ending of clip " + i + ": " + endOfClip.getTimeStamp() + ", in seconds: ");
 
                         String clipToWorkWith = toolBox.TEMP + "video" + i + ".mp4";
-                        if (getTransitionClipChance() > 0 && toolBox.randomInt(0, 99) < getTransitionClipChance()) {
+                        if (getTransitionClipChance() > 0 && toolBox.randomInt(99) < getTransitionClipChance()) {
                             System.out.println("Tryina use a diff source");
                             toolBox.copyVideo(effectsFactory.pickSource(), clipToWorkWith);
                         } else {
                             toolBox.snipVideo(sourceToPick, startOfClip, endOfClip, clipToWorkWith);
                         }
-                        if (toolBox.randomInt(0, 99) < getEffectChance())
+                        if (toolBox.randomInt(99) < getEffectChance())
                             effectsFactory.applyRandomEffect(clipToWorkWith);
 
                         doneCount += 1.0 / getMaxClips();
