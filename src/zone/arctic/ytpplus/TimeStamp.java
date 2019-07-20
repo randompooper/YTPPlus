@@ -6,13 +6,20 @@
 package zone.arctic.ytpplus;
 
 import java.util.concurrent.TimeUnit;
+import java.util.Locale;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 
 /**
  *
  * @author bebn
  */
 public class TimeStamp {
-
+    /* 8 digits will be enough
+     * Output depends on system locale (on some locales '.' replaced with ',')
+     * Neutralize locale with Locale.ROOT
+     */
+    private static DecimalFormat df = new DecimalFormat("#.########", new DecimalFormatSymbols(Locale.ROOT));
     private int HOURS;
     private int MINUTES;
     private double SECONDS;
@@ -55,13 +62,7 @@ public class TimeStamp {
         return SECONDS;
     }
 
-    public void getDeets() {
-        System.out.println("HOURS: " + this.HOURS);
-        System.out.println("MIN: " + this.MINUTES);
-        System.out.println("SEC: " + this.SECONDS);
-    }
-
     public String getTimeStamp() {
-        return this.HOURS + ":" + this.MINUTES + ":" + this.SECONDS;
+        return this.HOURS + ":" + this.MINUTES + ":" + df.format(this.SECONDS);
     }
 }
