@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.Map;
 import java.util.TreeMap;
 import java.lang.reflect.Method;
+import zone.arctic.ytpplus.Utilities;
+import zone.arctic.ytpplus.Utilities.Pair;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 
@@ -27,26 +29,21 @@ public class EffectsFactory {
         this.toolBox = utilities;
     }
 
-    public String pickSound() {
-        File[] files = new File(toolBox.getSounds()).listFiles();
-        File file = files[toolBox.randomInt(files.length - 1)];
-        return file.getPath();
-    }
-    public String pickSource() {
-        File[] files = new File(toolBox.getSources()).listFiles();
-        File file = files[toolBox.randomInt(files.length - 1)];
-        return file.getPath();
+    public Pair<String, Double> pickSound() {
+        return toolBox.pickRandomMediaFile(toolBox.getSounds());
     }
 
-    public String pickMusic() {
-        File[] files = new File(toolBox.getMusic()).listFiles();
-        File file = files[toolBox.randomInt(files.length - 1)];
-        return file.getPath();
+    public Pair<String, Double> pickSource() {
+        return toolBox.pickRandomMediaFile(toolBox.getSources());
+    }
+
+    public Pair<String, Double> pickMusic() {
+        return toolBox.pickRandomMediaFile(toolBox.getMusic());
     }
 
     /* EFFECTS */
-    public void effect_RandomSound(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_RandomSound(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -54,7 +51,7 @@ public class EffectsFactory {
                 in.renameTo(temp);
 
             toolBox.execFFmpeg("-i", temp.getPath(),
-                "-i", pickSound(),
+                "-i", pickSound().getFirst(),
                 "-filter_complex", "[1:a]volume=1,apad[A];[0:a][A]amerge[out]",
                 "-ac", "2",
                 "-ar", "44100",
@@ -63,14 +60,14 @@ public class EffectsFactory {
                 "-map", "[out]",
                 "-y", video);
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
-    public void effect_RandomSoundMute(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+
+    public void effect_RandomSoundMute(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
-            String randomSound = pickSound();
-            String soundLength = toolBox.getLength(randomSound);
-            System.out.println("Doing a mute now. " + randomSound + " length: " + soundLength + ".");
+            Pair<String, Double> randomSound = pickSound();
+            System.err.println("Doing a mute now. " + randomSound.getFirst() + " length: " + randomSound.getSecond() + ".");
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
             File temp2 = toolBox.getTempVideoFile();
@@ -81,8 +78,8 @@ public class EffectsFactory {
                 "-af", "volume=0",
                 "-y", temp2.getPath());
             toolBox.execFFmpeg("-i", temp2.getPath(),
-               "-i", randomSound,
-               "-to", soundLength,
+               "-i", randomSound.getFirst(),
+               "-to", randomSound.getSecond().toString(),
                "-ar", "44100",
                "-filter_complex", "[1:a]volume=1,apad[A];[0:a][A]amerge[out]",
                "-ac", "2",
@@ -92,33 +89,29 @@ public class EffectsFactory {
 
             temp.delete();
             temp2.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
-    public void effect_Reverse(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_Reverse(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
-            File temp2 = toolBox.getTempVideoFile();
             if (in.exists())
                 in.renameTo(temp);
 
             toolBox.execFFmpeg("-i", temp.getPath(),
                 "-map", "0",
                 "-af", "areverse",
-                "-y", temp2.getPath());
-            toolBox.execFFmpeg("-i", temp2.getPath(),
                 "-vf", "reverse",
                 "-y", video);
 
             temp.delete();
-            temp2.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
 
-    public void effect_SpeedUp(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_SpeedUp(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -131,11 +124,11 @@ public class EffectsFactory {
                 "-y", video);
 
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
-    public void effect_SlowDown(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_SlowDown(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -148,12 +141,12 @@ public class EffectsFactory {
                 "-y", video);
             temp.delete();
         } catch (Exception ex) {
-            System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);
+            System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);
         }
     }
 
-    public void effect_Chorus(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_Chorus(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -164,11 +157,11 @@ public class EffectsFactory {
                "-af", "chorus=0.5:0.9:50|60|40:0.4|0.32|0.3:0.25|0.4|0.3:2|2.3|1.3",
                "-y", video);
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
-    public void effect_Vibrato(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_Vibrato(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -179,11 +172,11 @@ public class EffectsFactory {
                "-af", "vibrato=f=7.0:d=0.5",
                "-y", video);
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
     public void effect_LowPitch(String video) {
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -195,11 +188,11 @@ public class EffectsFactory {
                "-af", "asetrate=44100*0.5,aresample=44100",
                "-y", video);
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
     public void effect_HighPitch(String video) {
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -211,11 +204,11 @@ public class EffectsFactory {
                "-af", "asetrate=44100*2,aresample=44100",
                "-y", video);
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
-    public void effect_Dance(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_Dance(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
 
@@ -231,8 +224,8 @@ public class EffectsFactory {
             if (in.exists())
                 in.renameTo(temp);
 
-            String randomSound = pickMusic();
-            double soundLength = Double.parseDouble(toolBox.getLength(randomSound)) / 8.0;
+            Pair<String, Double> randomSound = pickMusic();
+            double soundLength = randomSound.getSecond() / 8.0;
             if (soundLength > 0.3)
                 soundLength = toolBox.randomDouble(0.3, Math.min(soundLength, 1.9));
 
@@ -260,7 +253,7 @@ public class EffectsFactory {
                 "-af", "atempo=2.0",
                 "-shortest", "-y", temp6.getPath());
             toolBox.execFFmpeg("-i", temp6.getPath(),
-                "-i", randomSound,
+                "-i", randomSound.getFirst(),
                 "-c:v", "libx264",
                 "-map", "0:v:0",
                 "-map", "1:a:0",
@@ -272,11 +265,11 @@ public class EffectsFactory {
             temp4.delete();
             temp5.delete();
             temp6.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
     public void effect_Squidward(String video) {
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile(); //og file
@@ -366,11 +359,11 @@ public class EffectsFactory {
 
             new File(picturePrefix + "black.png").delete();
             squidwardScript.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
-    public void effect_Mirror(String video){
-        System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
+    public void effect_Mirror(String video) {
+        System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + " initiated");
         try {
             File in = new File(video);
             File temp = toolBox.getTempVideoFile();
@@ -383,13 +376,14 @@ public class EffectsFactory {
                 + "[tmp]hflip[part1];" + (flip ? "[part0][part1]" : "[part1][part0]") + "hstack",
                 "-y", video);
             temp.delete();
-        } catch (Exception ex) {System.out.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
+        } catch (Exception ex) {System.err.println(new Object() {}.getClass().getEnclosingMethod().getName() + "\n" +ex);}
     }
 
     public void configureEffects(Map<String, Integer> options) throws NoSuchMethodException {
         double l = 0.0, totalLikelyness = 0.0;
-        map = new TreeMap<Double, Method>();
         Set<Map.Entry<String, Integer>> optionSet = options.entrySet();
+
+        map = new TreeMap<Double, Method>();
         for (Map.Entry<String, Integer> opt: optionSet)
             if (opt.getValue() > 0)
                 totalLikelyness += opt.getValue();
@@ -400,7 +394,7 @@ public class EffectsFactory {
                 map.put(l, EffectsFactory.class.getMethod("effect_" + opt.getKey(), String.class));
             }
         for (Map.Entry<Double, Method> o : map.entrySet())
-            System.out.println("" + o.getKey() + " = " + o.getValue());
+            System.err.println("" + o.getKey() + " = " + o.getValue().getName());
     }
 
     public void applyRandomEffect(String video) {
@@ -408,14 +402,16 @@ public class EffectsFactory {
             return;
 
         double randFloat = toolBox.randomDouble();
+
         Map.Entry<Double, Method> effect = map.higherEntry(randFloat);
-        System.out.println("Random float " + randFloat + "; Found " + effect);
+        System.err.println("Random float " + randFloat + "; Found " + effect);
+
         Method method = effect.getValue();
-        System.out.println("Starting effect " + method.getName());
+        System.err.println("Starting effect " + method.getName());
         try {
             method.invoke(this, video);
         } catch (Exception ex) {
-            System.out.println("Failed to apply random effect: " + ex);
+            System.err.println("Failed to apply random effect: " + ex);
         }
     }
 }

@@ -1,13 +1,14 @@
 package zone.arctic.ytpplus;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.nio.file.Files;
+import java.io.BufferedReader;
+import java.io.OutputStream;
 import java.io.InputStreamReader;
-import java.util.Random;
+import java.nio.file.Files;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
 
 /**
  * FFMPEG utilities toolbox for YTP+
@@ -20,12 +21,39 @@ public class Utilities {
     private String FFMPEG;
     private String MAGICK;
 
-    private Random random = new Random();
     private String TEMP = "";
     private String SOURCES = "";
     private String SOUNDS = "";
     private String MUSIC = "";
     private String RESOURCES = "";
+
+    public class Pair<T, E> {
+        public Pair() {}
+
+        public Pair(T first, E second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        public T getFirst() {
+            return first;
+        }
+
+        public void setFirst(T first) {
+            this.first = first;
+        }
+
+        public E getSecond() {
+            return second;
+        }
+
+        public void setSecond(E second) {
+            this.second = second;
+        }
+
+        private T first;
+        private E second;
+    }
 
     private ThreadLocalRandom random() {
         return ThreadLocalRandom.current();
@@ -95,7 +123,7 @@ public class Utilities {
         return RESOURCES;
     }
 
-    public String getLength(String file) {
+    public double getLength(String file) {
         try {
             Runtime rt = Runtime.getRuntime();
             Process proc = rt.exec(new String[] {
@@ -109,10 +137,10 @@ public class Utilities {
             String s;
             proc.waitFor();
             while ((s = stdInput.readLine()) != null) {
-                return s;
+                return Double.parseDouble(s);
             }
-        } catch (Exception ex) {System.out.println(ex); return "";}
-        return "";
+        } catch (Exception ex) {System.err.println(ex); return -1.0;}
+        return -1.0;
     }
 
     /**
@@ -123,7 +151,7 @@ public class Utilities {
      * @param endTime start time (in TimeStamp format, e.g. new TimeStamp(seconds);)
      * @param output output video filename to save the snipped clip to
      */
-    public void snipVideo(String video, TimeStamp startTime, TimeStamp endTime, String output){
+    public void snipVideo(String video, TimeStamp startTime, TimeStamp endTime, String output) {
         try {
             int exitValue = execFFmpeg(
                 "-ss", startTime.getTimeStamp(),
@@ -136,10 +164,10 @@ public class Utilities {
                 "-y", output
             );
             if (exitValue==1) {
-                System.out.println("ERROR");
+                System.err.println("ERROR");
                 System.exit(0);
             }
-        } catch (Exception ex) {System.out.println(ex);}
+        } catch (Exception ex) {System.err.println(ex);}
     }
 
     /**
@@ -148,7 +176,7 @@ public class Utilities {
      * @param video input video filename to work with
      * @param output output video filename to save the snipped clip to
      */
-    public void copyVideo(String video, String output){
+    public void copyVideo(String video, String output) {
         try {
             int exitValue = execFFmpeg(
                 "-i", video,
@@ -158,10 +186,10 @@ public class Utilities {
                 "-y", output
             );
             if (exitValue==1) {
-                System.out.println("ERROR");
+                System.err.println("ERROR");
                 System.exit(0);
             }
-        } catch (Exception ex) {System.out.println(ex);}
+        } catch (Exception ex) {System.err.println(ex);}
     }
 
     /**
@@ -197,16 +225,26 @@ public class Utilities {
                 "-map", "[outa]",
                 "-y", out
             }, false);
-            System.out.println(cmdLine);
+            System.err.println(cmdLine);
             new DefaultExecutor().execute(cmdLine);
-        } catch (Exception ex) {System.out.println(ex);}
+        } catch (Exception ex) {System.err.println(ex);}
     }
 
     public static int exec(String what, String ...args) throws Exception {
         CommandLine cmdLine = new CommandLine(what);
         cmdLine.addArguments(args, false);
-        System.out.println("Command: " + cmdLine);
-        return new DefaultExecutor().execute(cmdLine);
+        //System.err.println("Command: " + cmdLine);
+        DefaultExecutor exe = new DefaultExecutor();
+        exe.setStreamHandler(new PumpStreamHandler(
+            /* Effectively ignores any writes and lets discard application
+             * output
+             */
+            new OutputStream() {
+                @Override
+                public void write(int b) {}
+            }
+        ));
+        return exe.execute(cmdLine);
     }
 
     public int execFFmpeg(String ...args) throws Exception {
@@ -248,6 +286,31 @@ public class Utilities {
         while (file.exists());
 
         return file;
+    }
+
+    public boolean probability(int prob) {
+        if (prob >= 100)
+            return true;
+
+        if (prob <= 0)
+            return false;
+
+        return random().nextInt(99) < prob;
+    }
+
+    public Pair<String, Double> pickRandomMediaFile(String path) {
+        File file;
+        double length;
+
+        File[] files = new File(path).listFiles();
+        do {
+            file = files[randomInt(files.length - 1)];
+            length = getLength(file.getPath());
+            if (length < 0.0)
+                System.err.println("WARNING! File " + file.getPath() + " was rejected by ffprobe");
+        } while (length < 0.0);
+
+        return new Pair<String, Double>(file.getPath(), length);
     }
 
     public static void rmDir(File file) {

@@ -17,19 +17,32 @@ public class YTPGenerator {
     private double MAX_STREAM_DURATION = 0.4;
     private double MIN_STREAM_DURATION = 0.2;
     private int MAX_CLIPS = 20;
+
+    private int transitionClipChance = 0;
+    private int effectChance = 50;
+
+    private boolean lazySwitch = false;
+    private String lazySwitchStartingSource = null;
+    private int lazySwitchChance = 3;
+    private int lazySwitchInterrupt = 20;
+    private int lazySwitchMaxClips = 60;
+
     private String OUTPUT_FILE;
 
     private Utilities toolBox = new Utilities();
 
     private Map<String, Integer> effects = new HashMap<String, Integer>();
-    private int transitionClipChance = 0;
-    private int effectChance = 50;
 
     private EffectsFactory effectsFactory = new EffectsFactory(toolBox);
     private ArrayList<String> sourceList = new ArrayList<String>();
 
-    public volatile boolean done = false;
-    public volatile double doneCount = 0;
+    public class ProgressCallback {
+        public void progress(double v) {}
+        public void done(String errors) {}
+    }
+
+    private ProgressCallback report = new ProgressCallback();
+    private volatile double doneProgress;
 
     public YTPGenerator(String output) {
         setOutputFile(output);
@@ -81,7 +94,7 @@ public class YTPGenerator {
     }
 
     public void setEffectChance(int chance) {
-        effectChance = Math.min(100, chance);
+        effectChance = Math.max(Math.min(100, chance), 0);
     }
 
     public int getEffectChance() {
@@ -89,17 +102,56 @@ public class YTPGenerator {
     }
 
     public void setTransitionClipChance(int chance) {
-        transitionClipChance = Math.min(100, chance);
+        transitionClipChance = Math.max(Math.min(100, chance), 0);
     }
 
     public int getTransitionClipChance() {
         return transitionClipChance;
     }
 
-    public boolean addSource(String sourceName) {
-        sourceList.add(new String(sourceName));
-        /* TO DO: Validate source before adding */
+    public void setLazySwitch(boolean state) {
+        lazySwitch = state;
+    }
+
+    public boolean getLazySwitch() {
+        return lazySwitch;
+    }
+
+    public void setLazySwitchChance(int chance) {
+        lazySwitchChance = chance;
+    }
+
+    public int getLazySwitchChance() {
+        return lazySwitchChance;
+    }
+
+    public void setLazySwitchInterrupt(int chance) {
+        lazySwitchInterrupt = chance;
+    }
+
+    public int getLazySwitchInterrupt() {
+        return lazySwitchInterrupt;
+    }
+
+    public void setLazySwitchMaxClips(int count) {
+        lazySwitchMaxClips = count;
+    }
+
+    public int getLazySwitchMaxClips() {
+        return lazySwitchMaxClips;
+    }
+
+    public boolean setLazySwitchStartingSource(String path) {
+        if (toolBox.getLength(path) < 0.0) {
+            System.err.println("Source " + path + " was rejected by ffprobe");
+            return false;
+        }
+        lazySwitchStartingSource = new String(path);
         return true;
+    }
+
+    public String getLazySwitchStartingSource() {
+        return lazySwitchStartingSource;
     }
 
     public void setFFmpeg(String path) {
@@ -166,6 +218,19 @@ public class YTPGenerator {
         return toolBox.getResources();
     }
 
+    public void setProgressCallback(ProgressCallback clbk) {
+        report = clbk;
+    }
+
+    public boolean addSource(String sourceName) {
+        if (toolBox.getLength(sourceName) < 0.0) {
+            System.err.println("Source " + sourceName + " was rejected by ffprobe");
+            return false;
+        }
+        sourceList.add(new String(sourceName));
+        return true;
+    }
+
     public boolean setEffect(String name, int likelyness) {
         try {
             /* This method will throw exception if effect doesn't exist */
@@ -177,7 +242,7 @@ public class YTPGenerator {
 
             return true;
         } catch (Exception ex) {
-            System.out.println("Failed to set effect: " + ex);
+            System.err.println("Failed to set effect: " + ex);
         }
         return false;
     }
@@ -213,74 +278,93 @@ public class YTPGenerator {
         setTransitionClipChance(6);
     }
 
+    private String randomSource() {
+        return sourceList.get(toolBox.randomInt(sourceList.size() - 1));
+    }
+
     public void go() {
-        System.out.println("My FFMPEG is: " + toolBox.getFFmpeg());
-        System.out.println("My FFPROBE is: " + toolBox.getFFprobe());
-        System.out.println("My MAGICK is: " + toolBox.getMagick());
-        System.out.println("My TEMP is: " + toolBox.getTemp());
-        System.out.println("My SOUNDS is: " + toolBox.getSounds());
-        System.out.println("My SOURCES is: " + toolBox.getSources());
-        System.out.println("My MUSIC is: " + toolBox.getMusic());
-        System.out.println("My RESOURCES is: " + toolBox.getResources());
         if (sourceList.isEmpty()) {
-            System.out.println("No sources added...");
+            System.err.println("No sources added...");
             return;
         }
         try {
             effectsFactory.configureEffects(effects);
         } catch (Exception ex) {
-            System.out.println("Failed to configure effects: " + ex);
+            System.err.println("Failed to configure effects: " + ex);
             return;
         }
-        Thread vidThread = new Thread() {
-            public void run() {
-                System.out.println("poop_1");
-                File out = new File(getOutputFile());
-                if (out.exists()) {
-                    out.delete();
+        final String sources[];
+        if (getLazySwitch() && sourceList.size() > 1) {
+            String pick = lazySwitchStartingSource != null ? lazySwitchStartingSource : randomSource();
+            sources = new String[getMaxClips()];
+            for (int i = 0, count = 0; i < getMaxClips(); ++i) {
+                if (toolBox.probability(getLazySwitchChance()) || count++ == getLazySwitchMaxClips()) {
+                    String oldPick = pick;
+                    while ((pick = randomSource()) == oldPick);
+                    count = 0;
                 }
-                cleanUp();
-                try {
-                    IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
-                        String sourceToPick = sourceList.get(toolBox.randomInt(sourceList.size() - 1));
-                        System.out.println(sourceToPick);
-                        double clipLength = Double.parseDouble(toolBox.getLength(sourceToPick));
-                        TimeStamp boy = new TimeStamp(clipLength);
-                        System.out.println("STARTING CLIP " + "video" + i + " of length " + clipLength);
-                        double start = 0.0, end = clipLength;
-                        if (end > getMinDuration()) {
-                            start = toolBox.randomDouble(0.0, end - getMinDuration());
-                            end = start + toolBox.randomDouble(getMinDuration(), Math.min(end - start, getMaxDuration()));
-                        }
-                        TimeStamp startOfClip = new TimeStamp(start);
-                        TimeStamp endOfClip = new TimeStamp(end);
-                        System.out.println("Beginning of clip " + i + ": " + startOfClip.getTimeStamp());
-                        System.out.println("Ending of clip " + i + ": " + endOfClip.getTimeStamp() + ", in seconds: ");
-
-                        String clipToWorkWith = toolBox.getTemp() + "video" + i + ".mp4";
-                        if (getTransitionClipChance() > 0 && toolBox.randomInt(99) < getTransitionClipChance()) {
-                            System.out.println("Tryina use a diff source");
-                            toolBox.copyVideo(effectsFactory.pickSource(), clipToWorkWith);
-                        } else {
-                            toolBox.snipVideo(sourceToPick, startOfClip, endOfClip, clipToWorkWith);
-                        }
-                        if (toolBox.randomInt(99) < getEffectChance())
-                            effectsFactory.applyRandomEffect(clipToWorkWith);
-
-                        doneCount += 1.0 / getMaxClips();
-                    });
-                    toolBox.concatenateVideo(getMaxClips(), getOutputFile());
-                } catch (Exception ex) { ex.printStackTrace(); }
-                Utilities.rmDir(new File(toolBox.getTemp()));
-                done = true;
+                if (toolBox.probability(getLazySwitchInterrupt()))
+                    while ((sources[i] = randomSource()) == pick);
+                else
+                    sources[i] = pick;
             }
-        };
-        vidThread.start();
+        } else
+            sources = null;
 
-    }
+        File out = new File(getOutputFile());
+        if (out.exists())
+            out.delete();
 
-    public boolean isDone() {
-        return done;
+        doneProgress = 0.0;
+        cleanUp();
+        try {
+            IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
+                String clipToWorkWith = toolBox.getTemp() + "video" + i + ".mp4";
+                if (toolBox.probability(getTransitionClipChance())) {
+                    String clip = effectsFactory.pickSource().getFirst();
+                    System.err.println("Transition clip: " + clip);
+                    toolBox.copyVideo(clip, clipToWorkWith);
+                } else {
+                    String sourceToPick;
+
+                    if (sources != null)
+                        sourceToPick = sources[i];
+                    else
+                        sourceToPick = randomSource();
+
+                    System.err.println(sourceToPick);
+                    double clipLength = toolBox.getLength(sourceToPick);
+                    TimeStamp boy = new TimeStamp(clipLength);
+
+                    double start = 0.0, end = clipLength;
+                    if (end > getMinDuration()) {
+                        start = toolBox.randomDouble(0.0, end - getMinDuration());
+                        end = start + toolBox.randomDouble(getMinDuration(), Math.min(end - start, getMaxDuration()));
+                    }
+
+                    TimeStamp startOfClip = new TimeStamp(start);
+                    TimeStamp endOfClip = new TimeStamp(end);
+                    System.err.println("Clip (" + clipLength + ") " + i + " " + startOfClip.getTimeStamp() + " - " + endOfClip.getTimeStamp());
+
+                    toolBox.snipVideo(sourceToPick, startOfClip, endOfClip, clipToWorkWith);
+                }
+                if (toolBox.probability(getEffectChance()))
+                    effectsFactory.applyRandomEffect(clipToWorkWith);
+
+                doneProgress += 1.0 / getMaxClips();
+                report.progress(doneProgress);
+            });
+            toolBox.concatenateVideo(getMaxClips(), getOutputFile());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            report.done(ex.toString());
+            /* Don't remove temp folder; let user investigate matter or
+             * manually concat what was generated
+             */
+            return;
+        }
+        Utilities.rmDir(new File(toolBox.getTemp()));
+        report.done(null);
     }
 
     public void cleanUp() {
@@ -288,6 +372,7 @@ public class YTPGenerator {
         File text = new File(toolBox.getTemp() + "concat.txt");
         if (text.exists())
             text.delete();
+
         File mp4 = new File(toolBox.getTemp() + "temp.mp4");
         if (mp4.exists())
             mp4.delete();
@@ -295,7 +380,7 @@ public class YTPGenerator {
         for (int i=0; i < getMaxClips(); i++) {
             File del = new File(toolBox.getTemp() + "video" + i + ".mp4");
             if (del.exists()) {
-                System.out.println(i + " Exists");
+                System.err.println(i + " Exists");
                 del.delete();
             }
         }
