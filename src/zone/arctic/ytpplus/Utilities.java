@@ -5,6 +5,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.io.InputStreamReader;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 
@@ -25,6 +26,10 @@ public class Utilities {
     private String SOUNDS = "";
     private String MUSIC = "";
     private String RESOURCES = "";
+
+    private ThreadLocalRandom random() {
+        return ThreadLocalRandom.current();
+    }
 
     public void setFFmpeg(String path) {
         FFMPEG = new String(path);
@@ -213,11 +218,11 @@ public class Utilities {
     }
 
     public int randomInt(int min, int max) {
-        return random.nextInt((max - min) + 1) + min;
+        return random().nextInt(min, max + 1);
     }
 
     public int randomInt(int max) {
-        return random.nextInt(max + 1);
+        return random().nextInt(max + 1);
     }
 
     public int randomInt() {
@@ -225,15 +230,15 @@ public class Utilities {
     }
 
     public double randomDouble() {
-        return random.nextDouble();
+        return random().nextDouble();
     }
 
     public double randomDouble(double min, double max) {
-        return random.nextDouble() * (max - min) + min;
+        return random().nextDouble(min, max);
     }
 
     public boolean randomBool() {
-        return random.nextBoolean();
+        return random().nextBoolean();
     }
 
     public File getTempVideoFile() {
