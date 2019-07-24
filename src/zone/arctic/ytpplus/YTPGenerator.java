@@ -6,7 +6,6 @@
 package zone.arctic.ytpplus;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -26,6 +25,8 @@ public class YTPGenerator {
     private int lazySwitchChance = 3;
     private int lazySwitchInterrupt = 20;
     private int lazySwitchMaxClips = 60;
+
+    private boolean qualityConvert = true;
 
     private String OUTPUT_FILE;
 
@@ -218,6 +219,14 @@ public class YTPGenerator {
         return toolBox.getResources();
     }
 
+    public void setQualityConvert(boolean state) {
+        qualityConvert = state;
+    }
+
+    public boolean getQualityConvert() {
+        return qualityConvert;
+    }
+
     public void setProgressCallback(ProgressCallback clbk) {
         report = clbk;
     }
@@ -354,7 +363,7 @@ public class YTPGenerator {
                 doneProgress += 1.0 / getMaxClips();
                 report.progress(doneProgress);
             });
-            toolBox.concatenateVideo(getMaxClips(), getOutputFile());
+            toolBox.concatenateVideo(getMaxClips(), getOutputFile(), getQualityConvert());
         } catch (Exception ex) {
             ex.printStackTrace();
             report.done(ex.toString());

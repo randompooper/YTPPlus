@@ -1,6 +1,7 @@
 package zone.arctic.ytpplus;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.OutputStream;
 import java.io.InputStreamReader;
@@ -198,36 +199,55 @@ public class Utilities {
      * @param count number of input videos to concatenate
      * @param out output video filename
      */
-    public void concatenateVideo(int count, String out) {
+    public void concatenateVideo(int count, String out, boolean quality) {
         try {
-            File export = new File(out);
+            if (quality) {
+                /* Slower, consumes a lot of memory (depending on amount of clips),
+                 * doesn't break any effect
+                 */
+                File export = new File(out);
 
-            if (export.exists())
-                export.delete();
+                if (export.exists())
+                    export.delete();
 
-            int realcount = 0;
-            CommandLine cmdLine = new CommandLine(getFFmpeg());
-            for (int i = 0; i < count; i++) {
-                File vid = new File(TEMP + "video" + i + ".mp4");
-                if (vid.exists()) {
-                    cmdLine.addArgument("-i", false);
-                    cmdLine.addArgument(vid.getPath(), false);
-                    ++realcount;
+                int realcount = 0;
+                CommandLine cmdLine = new CommandLine(getFFmpeg());
+                for (int i = 0; i < count; i++) {
+                    File vid = new File(TEMP + "video" + i + ".mp4");
+                    if (vid.exists()) {
+                        cmdLine.addArgument("-i", false);
+                        cmdLine.addArgument(vid.getPath(), false);
+                        ++realcount;
+                    }
                 }
-            }
-            String filter = new String();
-            for (int i=0; i < realcount; i++)
-                filter += "[" + i + ":v:0][" + i + ":a:0]";
+                String filter = new String();
+                for (int i=0; i < realcount; i++)
+                    filter += "[" + i + ":v:0][" + i + ":a:0]";
 
-            cmdLine.addArguments(new String[] {
-                "-filter_complex", filter + "concat=n=" + realcount + ":v=1:a=1[outv][outa]",
-                "-map", "[outv]",
-                "-map", "[outa]",
-                "-y", out
-            }, false);
-            System.err.println(cmdLine);
-            new DefaultExecutor().execute(cmdLine);
-        } catch (Exception ex) {System.err.println(ex);}
+                cmdLine.addArguments(new String[] {
+                    "-filter_complex", filter + "concat=n=" + realcount + ":v=1:a=1[outv][outa]",
+                    "-map", "[outv]",
+                    "-map", "[outa]",
+                    "-y", out
+                }, false);
+                System.err.println(cmdLine);
+                new DefaultExecutor().execute(cmdLine);
+            } else {
+                /* Faster, consumes less memory, breaks some effects */
+                PrintWriter writer = new PrintWriter(getTemp() + "concat.txt", "UTF-8");
+                for (int i = 0; i < count; i++) {
+                    if (new File(getTemp() + "video" + i + ".mp4").exists()) {
+                        writer.write("file 'video" + i + ".mp4'\n"); //writing to same folder
+                    }
+                }
+                writer.close();
+                execFFmpeg("-f", "concat", "-i", getTemp() + "/concat.txt",
+                    "-ac", "1", "-ar", "44100",
+                    "-vf", "scale=640x480,setsar=1:1,fps=fps=30", out);
+            }
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
     }
 
     public static int exec(String what, String ...args) throws Exception {
