@@ -284,13 +284,13 @@ public class YTPGenerator {
 
     public void go() {
         if (sourceList.isEmpty()) {
-            System.err.println("No sources added...");
+            report.done("No sources added ...");
             return;
         }
         try {
             effectsFactory.configureEffects(effects);
         } catch (Exception ex) {
-            System.err.println("Failed to configure effects: " + ex);
+            report.done("Failed to configure effects: " + ex);
             return;
         }
         final String sources[];
