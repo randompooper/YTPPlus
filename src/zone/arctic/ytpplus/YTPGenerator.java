@@ -232,8 +232,9 @@ public class YTPGenerator {
     }
 
     public boolean addSource(String sourceName) {
-        if (toolBox.getLength(sourceName) < 0.0) {
-            System.err.println("Source " + sourceName + " was rejected by ffprobe");
+        if (!toolBox.isVideoAudioPresent(sourceName)) {
+            System.err.println("Source " + sourceName + " was rejected by ffprobe: " +
+                "it might lack video or audio stream or might be not media file at all");
             return false;
         }
         sourceList.add(new String(sourceName));

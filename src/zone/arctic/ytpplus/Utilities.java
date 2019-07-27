@@ -144,6 +144,34 @@ public class Utilities {
         return -1.0;
     }
 
+    public boolean isVideoAudioPresent(String file) {
+        try {
+            boolean videoPresent = false, audioPresent = false;
+
+            Process proc = execProc(getFFprobe(),
+                "-loglevel", "error",
+                "-show_entries", "stream=codec_type",
+                "-of", "csv=p=0",
+                file);
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            int exitValue = proc.waitFor();
+            if (exitValue != 0)
+                return false;
+
+            String s;
+            while ((s = stdInput.readLine()) != null) {
+                if (s.equals("video"))
+                    videoPresent = true;
+                else if (s.equals("audio"))
+                    audioPresent = true;
+            }
+            return videoPresent && audioPresent;
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
+        return false;
+    }
+
     /**
      * Snip a video file between the start and end time, and save it to an output file.
      *
