@@ -6,10 +6,8 @@ import java.io.BufferedReader;
 import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.util.stream.IntStream;
 import java.util.concurrent.ThreadLocalRandom;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
 
 /**
  * FFMPEG utilities toolbox for YTP+
@@ -126,21 +124,23 @@ public class Utilities {
 
     public double getLength(String file) {
         try {
-            Runtime rt = Runtime.getRuntime();
-            Process proc = rt.exec(new String[] {
-                getFFprobe(),
+            Process proc = execProc(getFFprobe(),
                 "-i", file,
                 "-show_entries", "format=duration",
                 "-v", "error",
-                "-of", "csv=p=0"
-            });
+                "-of", "csv=p=0");
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            int exitValue = proc.waitFor();
+            if (exitValue != 0)
+                return -1.0;
+
             String s;
-            proc.waitFor();
             while ((s = stdInput.readLine()) != null) {
                 return Double.parseDouble(s);
             }
-        } catch (Exception ex) {System.err.println(ex); return -1.0;}
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
         return -1.0;
     }
 
@@ -202,77 +202,94 @@ public class Utilities {
     public void concatenateVideo(int count, String out, boolean quality) {
         try {
             if (quality) {
-                /* Slower, consumes a lot of memory (depending on amount of clips),
-                 * doesn't break any effect
-                 */
-                File export = new File(out);
-
-                if (export.exists())
-                    export.delete();
-
-                int realcount = 0;
-                CommandLine cmdLine = new CommandLine(getFFmpeg());
-                for (int i = 0; i < count; i++) {
-                    File vid = new File(TEMP + "video" + i + ".mp4");
-                    if (vid.exists()) {
-                        cmdLine.addArgument("-i", false);
-                        cmdLine.addArgument(vid.getPath(), false);
-                        ++realcount;
+                IntStream.range(0, count).parallel().forEach(i -> {
+                    try {
+                        File vid = new File(getTemp() + "video" + i + "." + getVideoExtension());
+                        if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
+                            File temp = getTempVideoFile();
+                            /* Simply force encoding and concat using demuxer */
+                            vid.renameTo(temp);
+                            copyVideo(temp.getPath(), vid.getPath());
+                        } else
+                            vid.delete();
+                    } catch (Exception ex) {
+                        System.err.println(ex);
                     }
-                }
-                String filter = new String();
-                for (int i=0; i < realcount; i++)
-                    filter += "[" + i + ":v:0][" + i + ":a:0]";
-
-                cmdLine.addArguments(new String[] {
-                    "-filter_complex", filter + "concat=n=" + realcount + ":v=1:a=1[outv][outa]",
-                    "-map", "[outv]",
-                    "-map", "[outa]",
-                    "-y", out
-                }, false);
-                System.err.println(cmdLine);
-                new DefaultExecutor().execute(cmdLine);
-            } else {
-                /* Faster, consumes less memory, breaks some effects */
+                });
                 PrintWriter writer = new PrintWriter(getTemp() + "concat.txt", "UTF-8");
                 for (int i = 0; i < count; i++) {
-                    if (new File(getTemp() + "video" + i + ".mp4").exists()) {
-                        writer.write("file 'video" + i + ".mp4'\n"); //writing to same folder
-                    }
+                    File vid = new File(getTemp() + "video" + i + ".mp4");
+                    if (vid.exists())
+                        writer.write("file 'video" + i + ".mp4'\n");
+
                 }
                 writer.close();
-                execFFmpeg("-f", "concat", "-i", getTemp() + "/concat.txt",
-                    "-ac", "1", "-ar", "44100",
-                    "-vf", "scale=640x480,setsar=1:1,fps=fps=30", out);
+                execFFmpeg("-f", "concat", "-i", getTemp() + "/concat.txt", "-c", "copy", out);
+            } else {
+                /* 1. Loselessly convert mp4 to MPEG-2 transport streams */
+                IntStream.range(0, count).parallel().forEach(i -> {
+                    try {
+                        File vid = new File(getTemp() + "video" + i + "." + getVideoExtension());
+                        if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
+                            //File temp = getTempVideoFile();
+                            // Reencode :(
+                            //copyVideo(vid.getPath(), temp.getPath());
+                            //vid.renameTo(temp);
+                            // And losslessly transcode
+                            execFFmpeg("-i", vid.getPath(), "-c", "copy",
+                                "-bsf:v", "h264_mp4toannexb", "-f", "mpegts",
+                                getTemp() + "video" + i + ".ts");
+
+                            vid.delete();
+                        } else
+                            vid.delete();
+                    } catch (Exception ex) {
+                        System.err.println(ex);
+                    }
+                });
+                /* 2. Make concat list */
+                String concatLine = "concat:";
+                for (int i = 0; i < count; ++i) {
+                    File vid = new File(getTemp() + "video" + i + ".ts");
+                    if (vid.exists())
+                        concatLine += vid.getPath() + (i == count - 1 ? "" : "|");
+                }
+                execFFmpeg("-i", concatLine, "-c", "copy", "-bsf:a",
+                    "aac_adtstoasc", out);
             }
         } catch (Exception ex) {
             System.err.println(ex);
         }
     }
 
-    public static int exec(String what, String ...args) throws Exception {
-        CommandLine cmdLine = new CommandLine(what);
-        cmdLine.addArguments(args, false);
-        //System.err.println("Command: " + cmdLine);
-        DefaultExecutor exe = new DefaultExecutor();
-        exe.setStreamHandler(new PumpStreamHandler(
-            /* Effectively ignores any writes and lets discard application
-             * output
-             */
-            new OutputStream() {
-                @Override
-                public void write(int b) {}
-            }
-        ));
-        return exe.execute(cmdLine);
+    public static Process execProc(String ...args) throws Exception {
+        return Runtime.getRuntime().exec(args);
+    }
+
+    public static int exec(String ...args) throws Exception {
+        Process proc = execProc(args);
+        /*BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+        String s;
+        while ((s = stdInput.readLine()) != null)
+            System.err.println(s);*/
+
+        return proc.waitFor();
+    }
+
+    public static int execWhat(String what, String ...args) throws Exception {
+        String[] cmdLine = new String[args.length + 1];
+        cmdLine[0] = what;
+        System.arraycopy(args, 0, cmdLine, 1, args.length);
+
+        return exec(cmdLine);
     }
 
     public int execFFmpeg(String ...args) throws Exception {
-        return exec(getFFmpeg(), args);
+        return execWhat(getFFmpeg(), args);
     }
 
     public int execMagick(String ...args) throws Exception {
-        return exec(getMagick(), args);
+        return execWhat(getMagick(), args);
     }
 
     public int randomInt(int min, int max) {

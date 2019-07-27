@@ -16,8 +16,6 @@ import java.util.TreeMap;
 import java.lang.reflect.Method;
 import zone.arctic.ytpplus.Utilities;
 import zone.arctic.ytpplus.Utilities.Pair;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
 
 
 public class EffectsFactory {
