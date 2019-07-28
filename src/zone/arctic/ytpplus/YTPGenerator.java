@@ -227,6 +227,14 @@ public class YTPGenerator {
         return qualityConvert;
     }
 
+    public void setVideoExtension(String ext) {
+        toolBox.setVideoExtension(ext);
+    }
+
+    public String getVideoExtension() {
+        return toolBox.getVideoExtension();
+    }
+
     public void setProgressCallback(ProgressCallback clbk) {
         report = clbk;
     }
@@ -329,7 +337,7 @@ public class YTPGenerator {
         cleanUp();
         try {
             IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
-                String clipToWorkWith = toolBox.getTemp() + "video" + i + ".mp4";
+                String clipToWorkWith = toolBox.getTemp() + "video" + i + "." + toolBox.getVideoExtension();
                 if (toolBox.probability(getTransitionClipChance())) {
                     String clip = effectsFactory.pickSource().getFirst();
                     System.err.println("Transition clip: " + clip);
@@ -383,12 +391,8 @@ public class YTPGenerator {
         if (text.exists())
             text.delete();
 
-        File mp4 = new File(toolBox.getTemp() + "temp.mp4");
-        if (mp4.exists())
-            mp4.delete();
-
         for (int i=0; i < getMaxClips(); i++) {
-            File del = new File(toolBox.getTemp() + "video" + i + ".mp4");
+            File del = new File(toolBox.getTemp() + "video" + i + "." + toolBox.getVideoExtension());
             if (del.exists()) {
                 System.err.println(i + " Exists");
                 del.delete();

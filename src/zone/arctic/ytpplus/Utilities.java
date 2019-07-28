@@ -26,6 +26,8 @@ public class Utilities {
     private String MUSIC = "";
     private String RESOURCES = "";
 
+    private String videoExtension = "mp4";
+
     public class Pair<T, E> {
         public Pair() {}
 
@@ -120,6 +122,14 @@ public class Utilities {
 
     public String getResources() {
         return RESOURCES;
+    }
+
+    public void setVideoExtension(String ext) {
+        videoExtension = new String(ext);
+    }
+
+    public String getVideoExtension() {
+        return videoExtension;
     }
 
     public double getLength(String file) {
@@ -347,7 +357,7 @@ public class Utilities {
     public File getTempVideoFile() {
         File file;
         do
-            file = new File(getTemp() + randomInt() + "-temp.mp4");
+            file = new File(getTemp() + randomInt() + "-temp." + getVideoExtension());
         while (file.exists());
 
         return file;
