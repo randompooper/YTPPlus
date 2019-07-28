@@ -45,6 +45,10 @@ public class YTPGenerator {
     private ProgressCallback report = new ProgressCallback();
     private volatile double doneProgress;
 
+    public YTPGenerator() {
+        setOutputFile("temp/tempoutput." + getVideoExtension());
+    }
+
     public YTPGenerator(String output) {
         setOutputFile(output);
     }
@@ -247,6 +251,14 @@ public class YTPGenerator {
         }
         sourceList.add(new String(sourceName));
         return true;
+    }
+
+    public void removeSource(String sourceName) {
+        while (sourceList.remove(sourceName));
+    }
+
+    public void clearSources() {
+        sourceList.clear();
     }
 
     public boolean setEffect(String name, int likelyness) {
