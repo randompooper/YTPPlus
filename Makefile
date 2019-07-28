@@ -15,6 +15,9 @@ $(OUTPUT): $(SOURCES)
 clean:
 	rm $(OUTPUT) $(LOC)/*.class || true
 
+clean-ui: clean
+	cd ../YTPPlusUI && make clean || true
+
 jar: $(OUTPUT)
 
 run: jar
@@ -22,6 +25,6 @@ run: jar
 
 run-ui: jar
 	cd ../YTPPlusUI && make
-	exec java -classpath $(OUTPUT):YTPPlusUI.jar --module-path ${PATH_TO_FX} --add-modules javafx.controls,javafx.fxml ytpplusui.MainApp
+	exec make -f ../YTPPlusUI/Makefile run-nocheck
 
 all: jar
