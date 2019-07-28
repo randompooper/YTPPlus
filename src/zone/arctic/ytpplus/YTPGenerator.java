@@ -490,10 +490,12 @@ public class YTPGenerator {
     }
 
     public void go() {
+        toolBox.resetLengthCache();
         _go(randomScript());
     }
 
     public void go(Script[] scr) {
+        toolBox.resetLengthCache();
         _go(scr);
     }
 

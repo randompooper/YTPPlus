@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.stream.IntStream;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -132,7 +134,13 @@ public class Utilities {
         return videoExtension;
     }
 
+    private Map<String, Double> lenCache = new HashMap<String, Double>();
     public double getLength(String file) {
+        Double v;
+
+        if ((v = lenCache.get(file)) != null)
+            return v;
+
         try {
             Process proc = execProc(getFFprobe(),
                 "-i", file,
@@ -146,12 +154,17 @@ public class Utilities {
 
             String s;
             while ((s = stdInput.readLine()) != null) {
-                return Double.parseDouble(s);
+                lenCache.put(file, (v = Double.parseDouble(s)));
+                return v;
             }
         } catch (Exception ex) {
             System.err.println(ex);
         }
         return -1.0;
+    }
+
+    public void resetLengthCache() {
+        lenCache = new HashMap<String, Double>();
     }
 
     public boolean isVideoAudioPresent(String file) {
@@ -206,7 +219,9 @@ public class Utilities {
                 System.err.println("ERROR");
                 System.exit(0);
             }
-        } catch (Exception ex) {System.err.println(ex);}
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
     }
 
     /**
@@ -228,7 +243,9 @@ public class Utilities {
                 System.err.println("ERROR");
                 System.exit(0);
             }
-        } catch (Exception ex) {System.err.println(ex);}
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
     }
 
     /**
@@ -383,6 +400,7 @@ public class Utilities {
             length = getLength(file.getPath());
             if (length < 0.0)
                 System.err.println("WARNING! File " + file.getPath() + " was rejected by ffprobe");
+
         } while (length < 0.0);
 
         return new Pair<String, Double>(file.getPath(), length);
