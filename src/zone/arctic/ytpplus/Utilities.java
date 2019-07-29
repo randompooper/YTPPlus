@@ -215,9 +215,8 @@ public class Utilities {
                 "-vf", "scale=640x480,setsar=1:1,fps=fps=30",
                 "-y", output
             );
-            if (exitValue==1) {
-                System.err.println("ERROR");
-                System.exit(0);
+            if (exitValue == 1) {
+                System.err.println("Failed to snip video!");
             }
         } catch (Exception ex) {
             System.err.println(ex);
@@ -239,9 +238,8 @@ public class Utilities {
                 "-vf", "scale=640x480,setsar=1:1,fps=fps=30",
                 "-y", output
             );
-            if (exitValue==1) {
-                System.err.println("ERROR");
-                System.exit(0);
+            if (exitValue == 1) {
+                System.err.println("Failed to copy video!");
             }
         } catch (Exception ex) {
             System.err.println(ex);
