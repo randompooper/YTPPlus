@@ -37,7 +37,7 @@ public class YTPGenerator {
     private double lazySeekNearbyMin = 0.2;
     private double lazySeekNearbyMax = 5.0;
 
-    private boolean qualityConvert = true;
+    private boolean reconvertEffected = true;
 
     private String OUTPUT_FILE;
 
@@ -316,12 +316,12 @@ public class YTPGenerator {
         return toolBox.getResources();
     }
 
-    public void setQualityConvert(boolean state) {
-        qualityConvert = state;
+    public void setReconvertEffected(boolean state) {
+        reconvertEffected = state;
     }
 
-    public boolean getQualityConvert() {
-        return qualityConvert;
+    public boolean getReconvertEffected() {
+        return reconvertEffected;
     }
 
     public void setVideoExtension(String ext) {
@@ -531,13 +531,19 @@ public class YTPGenerator {
                     );
                     toolBox.snipVideo(pick.file, pick.interval.getFirst(), pick.interval.getSecond(), clipToWorkWith);
                 }
-                if (pick.applyEffect)
+                if (pick.applyEffect) {
                     effectsFactory.applyRandomEffect(clipToWorkWith);
-
+                    /* TO DO: Only reconvert after certain effect applied */
+                    if (getReconvertEffected()) {
+                        File temp = toolBox.getTempVideoFile();
+                        toolBox.copyVideo(clipToWorkWith, temp.getPath());
+                        temp.renameTo(new File(clipToWorkWith));
+                    }
+                }
                 doneProgress += 1.0 / scr.length;
                 report.progress(doneProgress);
             });
-            toolBox.concatenateVideo(scr.length, getOutputFile(), getQualityConvert());
+            toolBox.concatenateVideo(scr.length, getOutputFile(), true);
         } catch (Exception ex) {
             ex.printStackTrace();
             report.done(ex.toString());

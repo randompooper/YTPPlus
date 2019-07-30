@@ -246,38 +246,18 @@ public class Utilities {
         }
     }
 
-    /**
-     * Concatenate videos by count
-     *
-     * @param count number of input videos to concatenate
-     * @param out output video filename
-     */
-    public void concatenateVideo(int count, String out, boolean quality) {
+    public void concatenateVideo(int count, String out, boolean demuxer) {
         try {
-            if (quality) {
-                IntStream.range(0, count).parallel().forEach(i -> {
-                    try {
-                        File vid = new File(getTemp() + "video" + i + "." + getVideoExtension());
-                        if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
-                            File temp = getTempVideoFile();
-                            /* Simply force encoding and concat using demuxer */
-                            vid.renameTo(temp);
-                            copyVideo(temp.getPath(), vid.getPath());
-                        } else
-                            vid.delete();
-                    } catch (Exception ex) {
-                        System.err.println(ex);
-                    }
-                });
+            if (demuxer) {
                 PrintWriter writer = new PrintWriter(getTemp() + "concat.txt", "UTF-8");
                 for (int i = 0; i < count; i++) {
                     File vid = new File(getTemp() + "video" + i + ".mp4");
-                    if (vid.exists())
+                    if (vid.exists() && isVideoAudioPresent(vid.getPath()))
                         writer.write("file 'video" + i + ".mp4'\n");
-
                 }
                 writer.close();
                 execFFmpeg("-f", "concat", "-i", getTemp() + "/concat.txt", "-c", "copy", out);
+            /* concat protocol */
             } else {
                 /* 1. Loselessly convert mp4 to MPEG-2 transport streams */
                 IntStream.range(0, count).parallel().forEach(i -> {
@@ -307,6 +287,7 @@ public class Utilities {
                     if (vid.exists())
                         concatLine += vid.getPath() + (i == count - 1 ? "" : "|");
                 }
+                /* 3. Finally concat */
                 execFFmpeg("-i", concatLine, "-c", "copy", "-bsf:a",
                     "aac_adtstoasc", out);
             }
