@@ -411,10 +411,13 @@ public class YTPGenerator {
             if (start < 0.0 || start >= end)
                 start = toolBox.randomDouble(0.0, end - getMinDuration());
 
-            //System.err.println("start " + start + ";end " + end);
-            //System.err.println("" + getMinDuration() + " " + Math.min(end - start, getMaxDuration()));
-            if (end - start > getMinDuration())
-                end = start + toolBox.randomDouble(getMinDuration(), Math.min(end - start, getMaxDuration()));
+            if (end - start > getMinDuration()) {
+                /* Special case: clips with fixed length */
+                if (getMinDuration() == getMaxDuration())
+                    end = start + getMinDuration();
+                else
+                    end = start + toolBox.randomDouble(getMinDuration(), Math.min(end - start, getMaxDuration()));
+            }
         }
         return toolBox.new Pair<TimeStamp, TimeStamp>(new TimeStamp(start), new TimeStamp(end));
     }
@@ -443,14 +446,14 @@ public class YTPGenerator {
             if (toolBox.probability(getTransitionClipChance()))
                 step.file = effectsFactory.pickSource().getFirst();
             else if (getLazySwitch()) {
-                if (toolBox.probability(getLazySwitchChance()) || count++ == getLazySwitchMaxClips()) {
+                if (sourceList.size() > 1 && (toolBox.probability(getLazySwitchChance()) || count++ == getLazySwitchMaxClips())) {
                     oldPick = pick;
                     /* Intentional reference compare */
                     while ((pick = randomSource()) == oldPick);
                     count = 0;
                     prev = null;
                 }
-                if (toolBox.probability(getLazySwitchInterrupt())) {
+                if (sourceList.size() > 1 && toolBox.probability(getLazySwitchInterrupt())) {
                     /* Intentional reference compare */
                     while ((step.file = randomSource()) == pick);
                     step.interval = randomInterval(step.file);
