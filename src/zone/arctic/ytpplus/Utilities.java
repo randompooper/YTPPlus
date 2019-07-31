@@ -302,10 +302,11 @@ public class Utilities {
 
     public static int exec(String ...args) throws Exception {
         Process proc = execProc(args);
-        /*BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+        BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
         String s;
         while ((s = stdInput.readLine()) != null)
-            System.err.println(s);*/
+            /* WINDOWS BUG: You have to eat all output to make waitFor() return */
+            /*System.err.println(s)*/;
 
         return proc.waitFor();
     }
