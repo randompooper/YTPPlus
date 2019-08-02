@@ -37,6 +37,8 @@ public class YTPGenerator {
     private double lazySeekNearbyMin = 0.2;
     private double lazySeekNearbyMax = 5.0;
 
+    private String introVideo = null;
+
     private boolean reconvertEffected = true;
 
     public enum ConcatMethod {
@@ -276,6 +278,23 @@ public class YTPGenerator {
         return lazySeekSameChance;
     }
 
+    public boolean setIntroVideo(String path) {
+        if (path == null) {
+            introVideo = null;
+            return true;
+        }
+        if (!toolBox.isVideoAudioPresent(path)) {
+            System.err.println("Video " + path + " was rejected by ffprobe");
+            return false;
+        }
+        introVideo = new String(path);
+        return true;
+    }
+
+    public String getIntroVideo() {
+        return introVideo;
+    }
+
     public void setFFmpeg(String path) {
         toolBox.setFFmpeg(path);
     }
@@ -471,7 +490,12 @@ public class YTPGenerator {
         if (getLazySeek() && getLazySeekFromStart())
             prev = toolBox.new Pair<TimeStamp, TimeStamp>(null, new TimeStamp(0.0));
 
-        for (int i = 0, count = 0, count2 = 0; i < getMaxClips(); ++i) {
+        int i = 0, count = 0, count2 = 0;
+        if (getIntroVideo() != null) {
+            step = (rnd[i++] = new Script());
+            step.file = getIntroVideo();
+        }
+        for (; i < getMaxClips(); ++i) {
             step = (rnd[i] = new Script());
             step.applyEffect = toolBox.probability(getEffectChance());
 
