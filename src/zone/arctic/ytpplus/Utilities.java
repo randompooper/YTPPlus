@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.util.stream.IntStream;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -246,54 +247,79 @@ public class Utilities {
         }
     }
 
-    public void concatenateVideo(int count, String out, boolean demuxer) {
-        try {
-            if (demuxer) {
-                PrintWriter writer = new PrintWriter(getTemp() + "concat.txt", "UTF-8");
-                for (int i = 0; i < count; i++) {
-                    File vid = new File(getTemp() + "video" + i + ".mp4");
-                    if (vid.exists() && isVideoAudioPresent(vid.getPath()))
-                        writer.write("file 'video" + i + ".mp4'\n");
-                }
-                writer.close();
-                execFFmpeg("-f", "concat", "-i", getTemp() + "/concat.txt", "-c", "copy", out);
-            /* concat protocol */
-            } else {
-                /* 1. Loselessly convert mp4 to MPEG-2 transport streams */
-                IntStream.range(0, count).parallel().forEach(i -> {
-                    try {
-                        File vid = new File(getTemp() + "video" + i + "." + getVideoExtension());
-                        if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
-                            //File temp = getTempVideoFile();
-                            // Reencode :(
-                            //copyVideo(vid.getPath(), temp.getPath());
-                            //vid.renameTo(temp);
-                            // And losslessly transcode
-                            execFFmpeg("-i", vid.getPath(), "-c", "copy",
-                                "-bsf:v", "h264_mp4toannexb", "-f", "mpegts",
-                                getTemp() + "video" + i + ".ts");
-
-                            vid.delete();
-                        } else
-                            vid.delete();
-                    } catch (Exception ex) {
-                        System.err.println(ex);
-                    }
-                });
-                /* 2. Make concat list */
-                String concatLine = "concat:";
-                for (int i = 0; i < count; ++i) {
-                    File vid = new File(getTemp() + "video" + i + ".ts");
-                    if (vid.exists())
-                        concatLine += vid.getPath() + (i == count - 1 ? "" : "|");
-                }
-                /* 3. Finally concat */
-                execFFmpeg("-i", concatLine, "-c", "copy", "-bsf:a",
-                    "aac_adtstoasc", out);
-            }
-        } catch (Exception ex) {
-            System.err.println(ex);
+    public void concatenateVideoDemuxer(int count, String out) throws Exception {
+        PrintWriter writer = new PrintWriter(getTemp() + "concat.txt", "UTF-8");
+        for (int i = 0; i < count; i++) {
+            File vid = new File(getTemp() + "video" + i + ".mp4");
+            if (vid.exists() && isVideoAudioPresent(vid.getPath()))
+                writer.write("file 'video" + i + ".mp4'\n");
         }
+        writer.close();
+        execFFmpeg("-f", "concat", "-i", getTemp() + "/concat.txt", "-c", "copy", out);
+    }
+
+    public void concatenateVideoConcatProto(int count, String out) throws Exception {
+        /* 1. Loselessly convert mp4 to MPEG-2 transport streams */
+        IntStream.range(0, count).parallel().forEach(i -> {
+            try {
+                File vid = new File(getTemp() + "video" + i + "." + getVideoExtension());
+                if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
+                    //File temp = getTempVideoFile();
+                    // Reencode :(
+                    //copyVideo(vid.getPath(), temp.getPath());
+                    //vid.renameTo(temp);
+                    // And losslessly transcode
+                    execFFmpeg("-i", vid.getPath(), "-c", "copy",
+                        "-bsf:v", "h264_mp4toannexb", "-f", "mpegts",
+                        getTemp() + "video" + i + ".ts");
+
+                    vid.delete();
+                } else
+                    vid.delete();
+            } catch (Exception ex) {
+                System.err.println(ex);
+            }
+        });
+        /* 2. Make concat list */
+        String concatLine = "concat:";
+        for (int i = 0; i < count; ++i) {
+            File vid = new File(getTemp() + "video" + i + ".ts");
+            if (vid.exists())
+                concatLine += vid.getPath() + (i == count - 1 ? "" : "|");
+        }
+        /* 3. Finally concat */
+        execFFmpeg("-i", concatLine, "-c", "copy", "-bsf:a",
+            "aac_adtstoasc", out);
+    }
+
+    public void concatenateVideoConcatFilter(int count, String out) throws Exception {
+        int realcount = 0;
+
+        ArrayList<String> cmdLine = new ArrayList<String>();
+        cmdLine.add(getFFmpeg());
+
+        for (int i = 0; i < count; i++) {
+            File vid = new File(TEMP + "video" + i + ".mp4");
+            if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
+                cmdLine.add("-i");
+                cmdLine.add(vid.getPath());
+                ++realcount;
+            }
+        }
+        String filter = new String();
+        for (int i=0; i < realcount; i++)
+            filter += "[" + i + ":v:0][" + i + ":a:0]";
+
+        cmdLine.add("-filter_complex");
+        cmdLine.add(filter + "concat=n=" + realcount + ":v=1:a=1[outv][outa]");
+        cmdLine.add("-map");
+        cmdLine.add("[outv]");
+        cmdLine.add("-map");
+        cmdLine.add("[outa]");
+        cmdLine.add("-y");
+        cmdLine.add(out);
+        System.err.println("Command line: " + cmdLine);
+        exec(cmdLine.toArray(new String[cmdLine.size()]));
     }
 
     public static Process execProc(String ...args) throws Exception {

@@ -39,6 +39,30 @@ public class YTPGenerator {
 
     private boolean reconvertEffected = true;
 
+    public enum ConcatMethod {
+        /* Very fast but breaks when certain clips are not converted.
+         * Even with clip reconversion final video might not play
+         * correctly in all media players, i.e. clips with
+         * squidward or high pitch effects not to mention some
+         * transitions migh be improper (funny enough it might
+         * lay out sound of one clip over other as the result of this)
+         */
+        DEMUXER,
+        /* Fast, clip reconversion still required due to reasons mentioned above
+         * Unlike with DEMUXER, Squidward plays normally, though some
+         * transitions might be incorrect and high pitch effect might glitch
+         */
+        CONCAT_PROTO,
+        /* First concatenation method introduced in YTP+
+         * It uses ffmpeg's concat filter which assumes clips have
+         * different format and/or different video and audio characteristics
+         * Doesn't break anything, makes video quality worse,
+         * requires a lot of memory and time
+         */
+        CONCAT_FILTER
+    }
+    private ConcatMethod concatMethod = ConcatMethod.CONCAT_FILTER;
+
     private String OUTPUT_FILE;
 
     private Utilities toolBox = new Utilities();
@@ -324,6 +348,14 @@ public class YTPGenerator {
         return reconvertEffected;
     }
 
+    public void setConcatMethod(ConcatMethod method) {
+        concatMethod = method;
+    }
+
+    public ConcatMethod getConcatMethod() {
+        return concatMethod;
+    }
+
     public void setVideoExtension(String ext) {
         toolBox.setVideoExtension(ext);
     }
@@ -519,6 +551,12 @@ public class YTPGenerator {
 
         doneProgress = 0.0;
         cleanUp();
+        /* It isn't needed when concat filter is used since every clip
+         * will be reconverted during concat
+         */
+        if (getReconvertEffected() && getConcatMethod() == ConcatMethod.CONCAT_FILTER)
+            setReconvertEffected(false);
+
         try {
             IntStream.range(0, getMaxClips()).parallel().forEach(i -> {
                 String clipToWorkWith = toolBox.getTemp() + "video" + i + "." + toolBox.getVideoExtension();
@@ -543,10 +581,19 @@ public class YTPGenerator {
                         temp.renameTo(new File(clipToWorkWith));
                     }
                 }
-                doneProgress += 1.0 / scr.length;
-                report.progress(doneProgress);
+                report.progress(doneProgress += 1.0 / scr.length);
             });
-            toolBox.concatenateVideo(scr.length, getOutputFile(), true);
+            switch (getConcatMethod()) {
+                case DEMUXER:
+                    toolBox.concatenateVideoDemuxer(scr.length, getOutputFile());
+                    break;
+                case CONCAT_PROTO:
+                    toolBox.concatenateVideoConcatProto(scr.length, getOutputFile());
+                    break;
+                case CONCAT_FILTER:
+                    toolBox.concatenateVideoConcatFilter(scr.length, getOutputFile());
+                    break;
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             report.done(ex.toString());
