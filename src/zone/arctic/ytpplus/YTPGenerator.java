@@ -194,7 +194,7 @@ public class YTPGenerator {
     }
 
     public boolean setLazySwitchStartingSource(String path) {
-        if (toolBox.getLength(path) < 0.0) {
+        if (!toolBox.isVideoAudioPresent(path)) {
             System.err.println("Source " + path + " was rejected by ffprobe");
             return false;
         }
