@@ -217,9 +217,11 @@ public class Utilities {
                 "-i", video,
                 "-to", endTime.getTimeStamp(),
                 "-copyts",
+                "-vf", "scale=640x480,setsar=1:1,fps=fps=30",
+                "-af", "aresample=async=1000",
                 "-ac", "1",
                 "-ar", "44100",
-                "-vf", "scale=640x480,setsar=1:1,fps=fps=30",
+                "-avoid_negative_ts", "make_zero",
                 "-y", output
             );
             if (exitValue == 1) {
@@ -240,9 +242,11 @@ public class Utilities {
         try {
             int exitValue = execFFmpeg(
                 "-i", video,
+                "-vf", "scale=640x480,setsar=1:1,fps=fps=30",
+                "-af", "aresample=async=1000",
                 "-ac", "1",
                 "-ar", "44100",
-                "-vf", "scale=640x480,setsar=1:1,fps=fps=30",
+                "-avoid_negative_ts", "make_zero",
                 "-y", output
             );
             if (exitValue == 1) {
