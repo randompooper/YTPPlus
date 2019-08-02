@@ -189,6 +189,12 @@ public class Utilities {
                 else if (s.equals("audio"))
                     audioPresent = true;
             }
+            if (!audioPresent || !videoPresent) {
+                System.err.println("File: " + file);
+                System.err.println("Audio present: " + audioPresent);
+                System.err.println("Video present: " + videoPresent);
+                System.err.println("Length: " + getLength(file));
+            }
             return videoPresent && audioPresent;
         } catch (Exception ex) {
             System.err.println(ex);
