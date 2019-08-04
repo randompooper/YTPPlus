@@ -1,29 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* Copyright 2019 randompooper, philosophofee (Ben Brown)
+ * This file is part of YTPPlus.
+ *
+ * YTPPlus is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * YTPPlus is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with YTPPlus.  If not, see <https://www.gnu.org/licenses/>.
  */
-package zone.arctic.ytpplus;
+package ytpplus;
 
 import java.util.concurrent.TimeUnit;
 import java.util.Locale;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
-/**
- *
- * @author bebn
- */
 public class TimeStamp {
-    /* 8 digits will be enough
-     * Output depends on system locale (on some locales '.' replaced with ',')
-     * Neutralize locale with Locale.ROOT
-     */
-    private static DecimalFormat df = new DecimalFormat("#.########", new DecimalFormatSymbols(Locale.ROOT));
-    private int HOURS;
-    private int MINUTES;
-    private double SECONDS;
-
     public TimeStamp(String time) {
         String[] parts = time.split(":");
         this.HOURS = Integer.parseInt(parts[0]);
@@ -65,4 +63,18 @@ public class TimeStamp {
     public String getTimeStamp() {
         return this.HOURS + ":" + this.MINUTES + ":" + df.format(this.SECONDS);
     }
+
+    @Override
+    public String toString() {
+        return getTimeStamp();
+    }
+
+    /* 8 digits will be enough
+     * Output depends on system locale (on some locales '.' replaced with ',')
+     * Neutralize locale with Locale.ROOT
+     */
+    private static DecimalFormat df = new DecimalFormat("#.########", new DecimalFormatSymbols(Locale.ROOT));
+    private int HOURS;
+    private int MINUTES;
+    private double SECONDS;
 }

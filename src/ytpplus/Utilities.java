@@ -1,4 +1,20 @@
-package zone.arctic.ytpplus;
+/* Copyright 2019 randompooper, philosophofee (Ben Brown)
+ * This file is part of YTPPlus.
+ *
+ * YTPPlus is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * YTPPlus is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with YTPPlus.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package ytpplus;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -11,54 +27,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
+import ytpplus.Pair;
 
-/**
- * FFMPEG utilities toolbox for YTP+
- *
- * @author benb
- */
 public class Utilities {
-
-    private String FFPROBE;
-    private String FFMPEG;
-    private String MAGICK;
-
-    private String TEMP = "";
-    private String SOURCES = "";
-    private String SOUNDS = "";
-    private String MUSIC = "";
-    private String RESOURCES = "";
-
-    private String videoExtension = "mp4";
-
-    public class Pair<T, E> {
-        public Pair() {}
-
-        public Pair(T first, E second) {
-            this.first = first;
-            this.second = second;
-        }
-
-        public T getFirst() {
-            return first;
-        }
-
-        public void setFirst(T first) {
-            this.first = first;
-        }
-
-        public E getSecond() {
-            return second;
-        }
-
-        public void setSecond(E second) {
-            this.second = second;
-        }
-
-        private T first;
-        private E second;
-    }
-
     private ThreadLocalRandom random() {
         return ThreadLocalRandom.current();
     }
@@ -88,7 +59,7 @@ public class Utilities {
     }
 
     public void setTemp(String path) {
-        TEMP = path + "/";
+        TEMP = path;
     }
 
     public String getTemp() {
@@ -96,7 +67,7 @@ public class Utilities {
     }
 
     public void setSources(String path) {
-        SOURCES = path + "/";
+        SOURCES = path;
     }
 
     public String getSources() {
@@ -104,7 +75,7 @@ public class Utilities {
     }
 
     public void setSounds(String path) {
-        SOUNDS = path + "/";
+        SOUNDS = path;
     }
 
     public String getSounds() {
@@ -112,7 +83,7 @@ public class Utilities {
     }
 
     public void setMusic(String path) {
-        MUSIC = path + "/";
+        MUSIC = path;
     }
 
     public String getMusic() {
@@ -120,22 +91,13 @@ public class Utilities {
     }
 
     public void setResources(String path) {
-        RESOURCES = path + "/";
+        RESOURCES = path;
     }
 
     public String getResources() {
         return RESOURCES;
     }
 
-    public void setVideoExtension(String ext) {
-        videoExtension = new String(ext);
-    }
-
-    public String getVideoExtension() {
-        return videoExtension;
-    }
-
-    private Map<String, Double> lenCache = new HashMap<String, Double>();
     public double getLength(String file) {
         Double v;
 
@@ -202,14 +164,6 @@ public class Utilities {
         return false;
     }
 
-    /**
-     * Snip a video file between the start and end time, and save it to an output file.
-     *
-     * @param video input video filename to work with
-     * @param startTime start time (in TimeStamp format, e.g. new TimeStamp(seconds);)
-     * @param endTime start time (in TimeStamp format, e.g. new TimeStamp(seconds);)
-     * @param output output video filename to save the snipped clip to
-     */
     public void snipVideo(String video, TimeStamp startTime, TimeStamp endTime, String output) {
         try {
             int exitValue = execFFmpeg(
@@ -232,12 +186,6 @@ public class Utilities {
         }
     }
 
-    /**
-     * Copies a video and encodes it in the proper format without changes.
-     *
-     * @param video input video filename to work with
-     * @param output output video filename to save the snipped clip to
-     */
     public void copyVideo(String video, String output) {
         try {
             int exitValue = execFFmpeg(
@@ -258,9 +206,9 @@ public class Utilities {
     }
 
     public void concatenateVideoDemuxer(int count, String out) throws Exception {
-        PrintWriter writer = new PrintWriter(getTemp() + "concat.txt", "UTF-8");
+        PrintWriter writer = new PrintWriter(getTemp() + "/concat.txt", "UTF-8");
         for (int i = 0; i < count; i++) {
-            File vid = new File(getTemp() + "video" + i + ".mp4");
+            File vid = new File(getTemp() + "/video" + i + ".mp4");
             if (vid.exists() && isVideoAudioPresent(vid.getPath()))
                 writer.write("file 'video" + i + ".mp4'\n");
         }
@@ -272,7 +220,7 @@ public class Utilities {
         /* 1. Loselessly convert mp4 to MPEG-2 transport streams */
         IntStream.range(0, count).parallel().forEach(i -> {
             try {
-                File vid = new File(getTemp() + "video" + i + "." + getVideoExtension());
+                File vid = new File(getTemp() + "/video" + i + ".mp4");
                 if (vid.exists() && isVideoAudioPresent(vid.getPath())) {
                     //File temp = getTempVideoFile();
                     // Reencode :(
@@ -281,7 +229,7 @@ public class Utilities {
                     // And losslessly transcode
                     execFFmpeg("-i", vid.getPath(), "-c", "copy",
                         "-bsf:v", "h264_mp4toannexb", "-f", "mpegts",
-                        getTemp() + "video" + i + ".ts");
+                        getTemp() + "/video" + i + ".ts");
 
                     vid.delete();
                 } else
@@ -293,7 +241,7 @@ public class Utilities {
         /* 2. Make concat list */
         String concatLine = "concat:";
         for (int i = 0; i < count; ++i) {
-            File vid = new File(getTemp() + "video" + i + ".ts");
+            File vid = new File(getTemp() + "/video" + i + ".ts");
             if (vid.exists())
                 concatLine += vid.getPath() + (i == count - 1 ? "" : "|");
         }
@@ -390,20 +338,20 @@ public class Utilities {
     public File getTempVideoFile() {
         File file;
         do
-            file = new File(getTemp() + randomInt() + "-temp." + getVideoExtension());
+            file = new File(getTemp() + "/" + randomInt() + "-temp.mp4");
         while (file.exists());
 
         return file;
     }
 
-    public boolean probability(int prob) {
-        if (prob >= 100)
+    public boolean probability(double prob) {
+        if (prob >= 100.0)
             return true;
 
-        if (prob <= 0)
+        if (prob <= 0.0)
             return false;
 
-        return random().nextInt(99) < prob;
+        return random().nextDouble(0.0, 100.0) < prob;
     }
 
     public Pair<String, Double> pickRandomMediaFile(String path) {
@@ -419,7 +367,11 @@ public class Utilities {
 
         } while (length < 0.0);
 
-        return new Pair<String, Double>(file.getPath(), length);
+        return new Pair<>(file.getPath(), length);
+    }
+
+    public static double clamp(double v, double min, double max) {
+        return Math.min(max, Math.max(min, v));
     }
 
     public static void rmDir(File file) {
@@ -433,4 +385,16 @@ public class Utilities {
         }
         file.delete();
     }
+
+    private Map<String, Double> lenCache = new HashMap<String, Double>();
+
+    private String FFPROBE = "ffprobe";
+    private String FFMPEG = "ffmpeg";
+    private String MAGICK = "magick";
+
+    private String TEMP = "temp/job";
+    private String SOURCES = "sources";
+    private String SOUNDS = "sounds";
+    private String MUSIC = "music";
+    private String RESOURCES = "resources";
 }
